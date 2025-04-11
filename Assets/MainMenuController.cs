@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-
 public class MainMenuController : MonoBehaviour
 {
     public GameObject quitConfirmationPanel; // 拖入预设窗口
@@ -9,10 +8,9 @@ public class MainMenuController : MonoBehaviour
     public void StartGame()
     {
         Debug.Log("Start Game");
-        // 加载名为 GameScene 的场景
-        SceneManager.LoadScene("GameScene");
+        // 改为加载卡组选择场景（DeckSelectionScene）
+        SceneManager.LoadScene("DeckSelectionScene");
     }
-
 
     public void OpenOptions()
     {
