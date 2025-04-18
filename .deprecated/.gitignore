@@ -1,0 +1,14 @@
+# Ignore Unity generated folders and files
+.vs/
+.vsconfig
+Library/
+Temp/
+obj/
+Logs/
+UserSettings/
+Packages/
+ProjectSettings/
+*.csproj
+*.sln
+*.user
+*.userprefs
