@@ -10,13 +10,18 @@ from typing import *
 class Page(ABC):
     def __init__(self, screen: pg.Surface) -> None:
         self.screen = screen
+        self.screen_width = self.screen.get_width
+        self.screen_height = self.screen.get_height
         self.screen.fill((250, 250, 250))
-        elements = self._build()
-        assert isinstance(elements, list) and all(isinstance(item, TpElement)
-                                                  for item in elements), 'method _build() should return list[TpElement]'
 
-        tp.Group(elements, mode=None).get_updater().launch()
+        es = self._build()
+        if isinstance(es, TpElement):
+            es = (es, )  # tuple
+        else:
+            errmsg = 'method _build() should return "TpElement" or "tuple[TpElement]"'
+            assert isinstance(es, tuple) and all(isinstance(e, TpElement) for e in es), errmsg
+        tp.Group(es, mode=None).get_updater().launch()
 
     @abstractmethod
-    def _build(self) -> list[TpElement]:
+    def _build(self) -> TpElement | tuple[TpElement, ...]:
         pass
