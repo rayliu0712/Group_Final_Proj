@@ -1,13 +1,11 @@
 import pygame as pg
 import thorpy as tp
-from src.home import Home
+from src.page.home import Home
 
 pg.init()
 screen = pg.display.set_mode((800, 600))
-screen.fill((255, 255, 255))
 tp.init(screen, tp.theme_game1)
+tp.call_before_gui(lambda: screen.fill((250, 250, 250)))
 
-try:
-    Home(screen)
-finally:
-    pg.quit()
+Home(screen)
+tp.exit_app()
