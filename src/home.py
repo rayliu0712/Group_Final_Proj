@@ -10,8 +10,8 @@ class Home:
 
     def run(self) -> None:
         title = tp.OutlinedText('ERIKA', 50)
-        title.at_unclick = lambda: print('start')
-        title.center_on(self.screen)
+        title.set_center(self.screen.get_width()/2,
+                         self.screen.get_height()/2-37)  # 25*1.5
 
         def makeImgBtn(path: str, onClick: Callable[[], None]) -> tp.ImageButton:
             img = pg.image.load(path)
@@ -20,12 +20,19 @@ class Home:
             imgBtn.at_unclick = onClick
             return imgBtn
 
+        playBtn = makeImgBtn(
+            'assets/image/play_button.png', lambda: print('play'))
+        playBtn.set_center(self.screen.get_width()/2,
+                           self.screen.get_height()/2+37)  # 25*1.5
+
         settingsBtn = makeImgBtn(
-            'assets/image/gear.png', lambda: print('setting'))
+            'assets/image/gear.png', lambda: print('settings'))
         settingsBtn.set_bottomleft(25, self.screen.get_height()-25)
 
-        closeBtn = makeImgBtn('assets/image/close.png', lambda: print('close'))
+        # "1/0" should be replace by exit function, but i still not found yet
+        closeBtn = makeImgBtn('assets/image/close.png',
+                              lambda: 1/0)  # raise ZeroDivisionError
         closeBtn.set_topright(self.screen.get_width()-25, 25)
 
-        group = tp.Group([title, settingsBtn, closeBtn], mode=None)
+        group = tp.Group([title, playBtn, settingsBtn, closeBtn], mode=None)
         group.get_updater().launch()
