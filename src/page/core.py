@@ -16,11 +16,11 @@ class Page(ABC):
 
         es = self._build()
         if isinstance(es, TpElement):
-            es = (es, )  # tuple
+            es.get_updater().launch()
         else:
             errmsg = 'method _build() should return "TpElement" or "tuple[TpElement]"'
             assert isinstance(es, tuple) and all(isinstance(e, TpElement) for e in es), errmsg
-        tp.Group(es, mode=None).get_updater().launch()
+            tp.Group(es, mode=None).get_updater().launch()
 
     @abstractmethod
     def _build(self) -> TpElement | tuple[TpElement, ...]:

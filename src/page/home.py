@@ -13,7 +13,7 @@ class Home(Page):
             imgbtn.at_unclick = onclick
             return imgbtn
 
-        playbtn = make_imgbtn('play_button.png', lambda: Play(self.screen))
+        playbtn = make_imgbtn('play_button.png', lambda: print('play'))
         playbtn.set_center(self.screen_width() / 2, self.screen_height() / 2 + 37)  # 25*1.5
 
         settingsbtn = make_imgbtn('gear.png', lambda: print('setting'))
