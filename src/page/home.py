@@ -3,23 +3,24 @@ from .core import *
 
 class Home(Page):
     def _build(self):
-        title = tp.OutlinedText('ERIKA', 50)
-        title.set_center(self.screen_width() / 2, self.screen_height() / 2 - 37)  # 25*1.5
 
+        # tp don't accept svg
         def make_imgbtn(filename: str, onclick: Callable[[], None]) -> tp.ImageButton:
-            img = pg.image.load('assets/image/' + filename)
-            scaledimg = pg.transform.scale(img, (50, 50))
-            imgbtn = tp.ImageButton('', scaledimg)
-            imgbtn.at_unclick = onclick
-            return imgbtn
+            img = pg.image.load(f'assets/image/{filename}.png')
+            btn = tp.ImageButton('', img)
+            btn.at_unclick = onclick
+            return btn
 
-        playbtn = make_imgbtn('play_button.png', lambda: print('play'))
-        playbtn.set_center(self.screen_width() / 2, self.screen_height() / 2 + 37)  # 25*1.5
+        close_btn = make_imgbtn('close_72dp', tp.exit_app)
+        close_btn.set_topright(self.screen_width(), 0)
 
-        settingsbtn = make_imgbtn('gear.png', lambda: print('setting'))
-        settingsbtn.set_topleft(25, 25)
+        settings_btn = make_imgbtn('settings_72dp', lambda: print('settings'))
+        play_btn = make_imgbtn('play_72dp', lambda: print('play'))
+        backpack_btn = make_imgbtn('backpack_72dp', lambda: print('backpack'))
+        btn_group = tp.Group((settings_btn, play_btn, backpack_btn), 'h', (0, 0), 48)
 
-        closebtn = make_imgbtn('close.png', tp.exit_app)
-        closebtn.set_topright(self.screen_width() - 25, 25)
+        title = tp.OutlinedText('ERIKA', 72)
+        center_group = tp.Group((title, btn_group), 'v', (0, 0), 24)
+        center_group.center_on(self.screen)
 
-        return title, playbtn, settingsbtn, closebtn
+        return close_btn, center_group
