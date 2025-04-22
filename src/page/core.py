@@ -1,5 +1,3 @@
-# EXPERIMENTAL
-
 import pygame as pg
 import thorpy as tp
 from thorpy.canonical import Element as TpElement
@@ -18,10 +16,8 @@ class Page(ABC):
         if isinstance(es, TpElement):
             es.get_updater().launch()
         else:
-            errmsg = 'method _build() should return "TpElement" or "tuple[TpElement]"'
-            assert isinstance(es, tuple) and all(isinstance(e, TpElement) for e in es), errmsg
             tp.Group(es, None, (0, 0), 0).get_updater().launch()
 
     @abstractmethod
-    def _build(self) -> TpElement | tuple[TpElement, ...]:
+    def _build(self) -> TpElement | list[TpElement]:
         pass
