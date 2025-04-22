@@ -1,6 +1,6 @@
 import pygame as pg
 import thorpy as tp
-from src.page.home import Home
+from src.ui.home import Home
 
 pg.init()
 screen = pg.display.set_mode((800, 600))
