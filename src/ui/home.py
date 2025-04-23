@@ -1,6 +1,6 @@
 from pygame import KMOD_ALT, K_q
 from thorpy import exit_app, OutlinedText, TitleBox, Text, Button
-from .page import Screen, Page
+from .core import Screen, Page
 from .simple import SimpleImageButton, SimpleGroup, SimplePopup
 
 
