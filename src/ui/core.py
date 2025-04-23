@@ -40,7 +40,6 @@ class Page(ABC):
             self.keys = keys
 
     def __init__(self) -> None:
-        Screen().fill((250, 250, 250))
         self._action_infoes: list[Page._ActionInfo] = []
 
         es = self._build()
