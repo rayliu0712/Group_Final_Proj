@@ -8,5 +8,5 @@ tp.set_default_font('consolas', 24)
 tp.init(screen, tp.theme_game1)
 tp.call_before_gui(lambda: screen.fill((250, 250, 250)))
 
-Home(screen)
+home = Home()
 tp.exit_app()
