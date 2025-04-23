@@ -51,14 +51,16 @@ class Page(ABC):
             pressed_mods = pygame.key.get_mods()
             pressed_keys = pygame.key.get_pressed()
             for (mods, keys), action_state in self._kevents.items():
-                result_mods = pressed_mods & mods
-                result_keys = all(pressed_keys[k] for k in keys)
-                if (mods == 0 or result_mods) and result_keys:
+                are_mods_pressed = pressed_mods & mods
+                are_keys_pressed = all(pressed_keys[k] for k in keys)
+                if (mods == 0 or are_mods_pressed) and are_keys_pressed:
                     if action_state.available:
                         action_state.available = False
                         action_state.action()
+                    else:
+                        pass  # keys have not been released yet
                 else:
-                    action_state.available = True
+                    action_state.available = True  # others actions are available
 
         es.get_updater().launch(func_after=trigger)
 
