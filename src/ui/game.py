@@ -1,10 +1,9 @@
 from pygame import KMOD_ALT, K_q
 from thorpy import quit_current_loop, OutlinedText
-from .core import Screen, Page
-from .simple import SimpleGroup
+from .core import Screen, PageWrapper, SimpleGroup
 
 
-class Game(Page):
+class Game(PageWrapper):
 
     def _build(self):
         title = OutlinedText('GAME SCENE', 72)

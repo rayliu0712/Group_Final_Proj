@@ -1,11 +1,10 @@
 from pygame import K_F1
 from thorpy import exit_app, OutlinedText, TitleBox, Text, Button
-from .core import Screen, Page
-from .simple import SimpleImageButton, SimpleGroup, SimplePopup, Action
+from .core import PopupWrapper, Screen, PageWrapper, SimpleGroup, SimpleImageButton
 from .game import Game
 
 
-class Home(Page):
+class Home(PageWrapper):
 
     def _build(self):
         close_btn = SimpleImageButton('close_72dp.png', exit_app)
@@ -29,7 +28,7 @@ class Home(Page):
         settings_box.set_opacity_bck_color(255)
         Screen.center(settings_box)
 
-        self._bind_keys(SimplePopup(credits_box, other), [], [K_F1])
-        settings_btn.at_unclick = SimplePopup(settings_box, other)
+        self._bind_keys(PopupWrapper(credits_box, other), [], [K_F1])
+        settings_btn.at_unclick = PopupWrapper(settings_box, other)
 
         return [other]
