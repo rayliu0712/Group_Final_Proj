@@ -3,7 +3,7 @@ from pygame import Surface
 from thorpy import get_screen, Button
 from thorpy.canonical import Element
 from abc import ABC, abstractmethod
-from .simple import SimpleGroup, Action
+from .simple import Action, SimpleGroup, new_loop_cursor_fix
 from typing import Optional
 from functools import reduce
 import operator
@@ -12,10 +12,11 @@ import operator
 class Screen():
     __instance: Optional[Surface] = None
 
-    # singleton
+    # Singleton
     def __new__(cls) -> Surface:
         if Screen.__instance is None:
             Screen.__instance = get_screen()
+        assert Screen.__instance is not None
         return Screen.__instance
 
     @staticmethod
@@ -39,17 +40,22 @@ class Page(ABC):
             self.mods = mods
             self.keys = keys
 
-    def __init__(self) -> None:
-        self._action_infoes: list[Page._ActionInfo] = []
+    def __init__(self, esc_quit: bool) -> None:
+        self._esc_quit = esc_quit
+
+    # Lazy
+    def __call__(self) -> None:
+        self._action_infos: list[Page._ActionInfo] = []
 
         es = self._build()
+        assert isinstance(es, list), 'method "_build()" should return list[Element]'
         es = es[0] if len(es) == 1 else SimpleGroup(es)
 
         def trigger() -> None:
             pressed_mods = pygame.key.get_mods()
             pressed_keys = pygame.key.get_pressed()
 
-            for action_info in self._action_infoes:
+            for action_info in self._action_infos:
                 action, mods, keys = action_info.action, action_info.mods, action_info.keys
 
                 are_mods_pressed = pressed_mods & mods
@@ -63,15 +69,19 @@ class Page(ABC):
                 else:
                     action_info.available = True  # others actions are available
 
-        es.get_updater().launch(func_after=trigger)
+        new_loop_cursor_fix()
+        es.get_updater(esc_quit=self._esc_quit).launch(func_after=trigger)
 
     @abstractmethod
     def _build(self) -> list[Element]:
         pass
 
     def _bind_keys(self, value: Button | Action, mods: list[int], keys: list[int]) -> None:
+        assert isinstance(mods, list), 'param "mods" should be list[int]'
+        assert isinstance(keys, list), 'param "keys" should be list[int]'
+
         action = value.at_unclick if isinstance(value, Button) else value
         mods: int = reduce(operator.or_, mods, 0) if mods else 0
 
         action_info = Page._ActionInfo(action, mods, keys)
-        self._action_infoes.append(action_info)
+        self._action_infos.append(action_info)
