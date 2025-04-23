@@ -1,4 +1,4 @@
-from pygame import KMOD_ALT, K_q
+from pygame import KMOD_CTRL, K_PERIOD
 from thorpy import exit_app, OutlinedText, TitleBox, Text, Button
 from .core import Screen, Page
 from .simple import SimpleImageButton, SimpleGroup, SimplePopup
@@ -9,9 +9,7 @@ class Home(Page):
     def _build(self):
         close_btn = SimpleImageButton('close_72dp.png', exit_app)
         close_btn.set_topright(Screen.width(), 0)
-        mods = (KMOD_ALT, )
-        keys = (K_q, )
-        self._bind_keys(close_btn, mods, keys)  # for example
+        self._bind_keys(close_btn, [KMOD_CTRL], [K_PERIOD])  # for example
 
         settings_btn = SimpleImageButton('settings_72dp.png', None)
         settings_btn.set_topleft(0, 0)

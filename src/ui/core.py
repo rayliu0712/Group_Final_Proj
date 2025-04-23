@@ -31,18 +31,17 @@ class Screen():
         return Screen().get_height()
 
 
-type IntTuple = tuple[int, ...]
-
-
 class Page(ABC):
-    class _ActionState:
-        def __init__(self, action: Action) -> None:
+    class _ActionInfo:
+        def __init__(self, action: Action, mods: int, keys: list[int]) -> None:
             self.available = True
             self.action = action
+            self.mods = mods
+            self.keys = keys
 
     def __init__(self) -> None:
         Screen().fill((250, 250, 250))
-        self._kevents: dict[tuple[int, IntTuple], Page._ActionState] = {}
+        self._action_infoes: list[Page._ActionInfo] = []
 
         es = self._build()
         es = es[0] if len(es) == 1 else SimpleGroup(es)
@@ -50,17 +49,20 @@ class Page(ABC):
         def trigger() -> None:
             pressed_mods = pygame.key.get_mods()
             pressed_keys = pygame.key.get_pressed()
-            for (mods, keys), action_state in self._kevents.items():
+
+            for action_info in self._action_infoes:
+                action, mods, keys = action_info.action, action_info.mods, action_info.keys
+
                 are_mods_pressed = pressed_mods & mods
                 are_keys_pressed = all(pressed_keys[k] for k in keys)
                 if (mods == 0 or are_mods_pressed) and are_keys_pressed:
-                    if action_state.available:
-                        action_state.available = False
-                        action_state.action()
+                    if action_info.available:
+                        action_info.available = False
+                        action()
                     else:
                         pass  # keys have not been released yet
                 else:
-                    action_state.available = True  # others actions are available
+                    action_info.available = True  # others actions are available
 
         es.get_updater().launch(func_after=trigger)
 
@@ -68,7 +70,9 @@ class Page(ABC):
     def _build(self) -> list[Element]:
         pass
 
-    def _bind_keys(self, value: Button | Action, mods: IntTuple, keys: IntTuple) -> None:
-        event = Page._ActionState(value.at_unclick if isinstance(value, Button) else value)
+    def _bind_keys(self, value: Button | Action, mods: list[int], keys: list[int]) -> None:
+        action = value.at_unclick if isinstance(value, Button) else value
         mods: int = reduce(operator.or_, mods, 0) if mods else 0
-        self._kevents[(mods, keys)] = event
+
+        action_info = Page._ActionInfo(action, mods, keys)
+        self._action_infoes.append(action_info)
