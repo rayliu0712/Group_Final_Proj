@@ -128,7 +128,8 @@ class PageWrapper(ABC):
         assert isinstance(elements, list) and all(isinstance(e, Element) for e in elements), 'method "_build()" should return list[Element]'
         elements = elements[0] if len(elements) == 1 else SimpleGroup(elements)
 
-        LauncherWrapper(lambda: elements.get_updater(esc_quit=True).launch(self._key_handler))()
+        launcher = LauncherWrapper(lambda: elements.get_updater(esc_quit=True).launch(self._key_handler))
+        launcher()
 
     @abstractmethod
     def _build(self) -> list[Element]:
