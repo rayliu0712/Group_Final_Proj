@@ -1,16 +1,16 @@
-from pygame import KMOD_ALT, K_q
 from thorpy import quit_current_loop, OutlinedText
-from .core import Screen, PageWrapper, SimpleGroup
+from .core import Screen, PageWrapper, SimpleGroup, SimpleImageButton
 
 
 class Game(PageWrapper):
 
     def _build(self):
         title = OutlinedText('GAME SCENE', 72)
-        subtitle = OutlinedText('PRESS ALT+Q TO EXIT')
+        subtitle = OutlinedText('PRESS ESC TO EXIT')
         group = SimpleGroup([title, subtitle], 'v')
         Screen.center(group)
 
-        self._bind_keys(quit_current_loop, [KMOD_ALT], [K_q])
+        closebtn = SimpleImageButton('close_72dp.png', quit_current_loop)
+        closebtn.set_topright(Screen.width(), 0)
 
-        return [group]
+        return [group, closebtn]

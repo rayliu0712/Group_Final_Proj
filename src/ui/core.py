@@ -10,7 +10,7 @@ import operator
 type Action = Callable[[], Any]
 
 
-def SimpleGroup(elements: list[Element], mode: Optional[str] = None, gap=0) -> Group:
+def SimpleGroup(elements: list[Element], mode: Optional[str] = None, gap: int = 0) -> Group:
     '''
     NOTE : SimpleGroup __init__ default parameters greatly differ from tp.Group
 
@@ -18,38 +18,17 @@ def SimpleGroup(elements: list[Element], mode: Optional[str] = None, gap=0) -> G
         gap = 0
         when mode is None, gap will not be used
     '''
-    assert isinstance(elements, list), 'param "elements" should be list[Element]'
+    assert isinstance(elements, list) and all(isinstance(e, Element) for e in elements), 'method "_build()" should return list[Element]'
+    assert (mode is None or isinstance(mode, str)) and isinstance(gap, int)
     group = Group(elements, mode, (0, 0), gap)
     return group
 
 
 def SimpleImageButton(filename: str, onclick: Optional[Action]) -> ImageButton:
+    assert isinstance(filename, str) and (onclick is None or callable(onclick))
     btn = ImageButton('', pygame.image.load(f'assets/image/{filename}'))
     btn.at_unclick = onclick
     return btn
-
-
-def fix_new_loop_cursor() -> None:
-    '''
-    not my fault, blame tp2 author
-    call it before launching a new loop
-    '''
-    pygame.mouse.set_cursor(arrow_cursor)
-
-
-def PopupWrapper(element: Element, other: Element) -> Action:
-    '''
-    Create an action that pops up an element
-
-    Parameters:
-        element: the element you want to pop up
-        other: the element you want to stay visible, it can be a group or box if multiple elements should stay visible
-    '''
-    def func() -> None:
-        fix_new_loop_cursor()
-        element.launch_and_lock_others(other, click_outside_cancel=True)
-
-    return func
 
 
 class Screen():
@@ -64,6 +43,7 @@ class Screen():
 
     @staticmethod
     def center(element: Element) -> None:
+        assert isinstance(element, Element)
         element.center_on(Screen())
 
     @staticmethod
@@ -75,56 +55,81 @@ class Screen():
         return Screen().get_height()
 
 
-class PageWrapper(ABC):
-    class _ActionInfo:
+class KeyEventHandler:
+    class __KeyAction:
         def __init__(self, action: Action, mods: int, keys: list[int]) -> None:
-            self.available = True
+            assert callable(action) and isinstance(mods, int) and isinstance(keys, list) and all(isinstance(k, int) for k in keys)
+            self.occupied = False
             self.action = action
             self.mods = mods
             self.keys = keys
 
-    def __init__(self, esc_quit: bool) -> None:
-        self._esc_quit = esc_quit
+    def __init__(self) -> None:
+        self.__kactions: set[KeyEventHandler.__KeyAction] = set()
 
-    # Lazy
+    def __iadd__(self, args: tuple[Button | Action, list[int], list[int]]) -> "KeyEventHandler":
+        '''
+        args[0] : button or action
+        args[1] : mod keys, list[int] (can be empty)
+        args[2] : keys, list[int] (cannot be empty)
+        '''
+        assert (isinstance(args, tuple) and
+                len(args) == 3 and
+                (callable(args[0]) or isinstance(args[0], Button)) and
+                isinstance(args[1], list) and all(isinstance(mod, int) for mod in args[1]) and
+                isinstance(args[2], list) and all(isinstance(key, int) for key in args[2])
+                ), 'param "key_action" should be tuple[Button | Action, list[int], list[int]]'
+
+        assert args[2], 'list "key_action[2]" cannot be empty'
+
+        action = args[0] if callable(args[0]) else args[0].at_unclick
+        mods = reduce(operator.or_, args[1], 0)
+        keys = args[2]
+        kaction = KeyEventHandler.__KeyAction(action, mods, keys)
+
+        assert kaction not in self.__kactions, f'mod keys "{mods}", keys "{keys}" has already been registered'
+        self.__kactions.add(kaction)
+        return self
+
     def __call__(self) -> None:
-        self._action_infos: list[PageWrapper._ActionInfo] = []
+        Screen().fill((250, 250, 250))
 
-        es = self._build()
-        assert isinstance(es, list), 'method "_build()" should return list[Element]'
-        es = es[0] if len(es) == 1 else SimpleGroup(es)
+        pressed_mods = pygame.key.get_mods()
+        pressed_keys = pygame.key.get_pressed()
 
-        def trigger() -> None:
-            pressed_mods = pygame.key.get_mods()
-            pressed_keys = pygame.key.get_pressed()
+        for kaction in self.__kactions:
+            action, mods, keys = kaction.action, kaction.mods, kaction.keys
 
-            for action_info in self._action_infos:
-                action, mods, keys = action_info.action, action_info.mods, action_info.keys
+            are_mods_pressed = pressed_mods & mods
+            are_keys_pressed = all(pressed_keys[k] for k in keys)
+            if (mods == 0 or are_mods_pressed) and are_keys_pressed:
+                if not kaction.occupied:
+                    kaction.occupied = True
+                    action()
+            else:
+                kaction.occupied = False  # others actions are not occupied
 
-                are_mods_pressed = pressed_mods & mods
-                are_keys_pressed = all(pressed_keys[k] for k in keys)
-                if (mods == 0 or are_mods_pressed) and are_keys_pressed:
-                    if action_info.available:
-                        action_info.available = False
-                        action()
-                    else:
-                        pass  # keys have not been released yet
-                else:
-                    action_info.available = True  # others actions are available
 
-        fix_new_loop_cursor()
-        es.get_updater(esc_quit=self._esc_quit).launch(func_after=trigger)
+def LauncherWrapper(launcher: Action) -> Action:
+    assert callable(launcher)
+
+    def action() -> None:
+        pygame.mouse.set_cursor(arrow_cursor)  # patch
+        launcher()
+    return action
+
+
+class PageWrapper(ABC):
+    def __init__(self) -> None:
+        self._key_handler = KeyEventHandler()
+
+    def __call__(self) -> None:
+        elements = self._build()
+        assert isinstance(elements, list) and all(isinstance(e, Element) for e in elements), 'method "_build()" should return list[Element]'
+        elements = elements[0] if len(elements) == 1 else SimpleGroup(elements)
+
+        LauncherWrapper(lambda: elements.get_updater(esc_quit=True).launch(self._key_handler))()
 
     @abstractmethod
     def _build(self) -> list[Element]:
         pass
-
-    def _bind_keys(self, value: Button | Action, mods: list[int], keys: list[int]) -> None:
-        assert isinstance(mods, list), 'param "mods" should be list[int]'
-        assert isinstance(keys, list), 'param "keys" should be list[int]'
-
-        action = value.at_unclick if isinstance(value, Button) else value
-        mods: int = reduce(operator.or_, mods, 0) if mods else 0
-
-        action_info = PageWrapper._ActionInfo(action, mods, keys)
-        self._action_infos.append(action_info)
