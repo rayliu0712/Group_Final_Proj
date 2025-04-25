@@ -94,7 +94,7 @@ class KeyEventHandler:
         kaction = KeyEventHandler.KeyAction(action, mods, keys)
 
         assert not self.__esc_quit or K_ESCAPE not in keys, 'esc_quit is on, you cannot register esc key'
-        assert kaction not in self.__kactions, f'mod keys "{mods}", keys "{keys}" has already been registered'
+        assert kaction not in self.__kactions, f'the combination key has already been registered'
         self.__kactions.append(kaction)
 
         return self
