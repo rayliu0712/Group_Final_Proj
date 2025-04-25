@@ -1,6 +1,6 @@
 from pygame import K_F1
-from thorpy import exit_app, OutlinedText, TitleBox, Text, Button
-from .core import LauncherWrapper, Screen, PageWrapper, SimpleGroup, SimpleImageButton
+from thorpy import Button, exit_app, OutlinedText, TitleBox, Text
+from .core import KeyEventHandler, LauncherWrapper, Screen, PageWrapper, SimpleGroup, SimpleImageButton, Element, Action
 from .game import Game
 
 
@@ -14,24 +14,28 @@ class Home(PageWrapper):
         settings_btn.set_topleft(0, 0)
 
         title = OutlinedText('ERIKA', 72)
-        subtitle = OutlinedText('F1: Credits')
-        play_btn = SimpleImageButton('play_72dp.png', Game())
-        center_group = SimpleGroup([title, subtitle, play_btn], 'v')
-
-        credits_box = TitleBox('Credits', [Text('Credits Test')])
-        credits_box.set_opacity_bck_color(255)
-        Screen.center(credits_box)
+        play_btn = SimpleImageButton('play_72dp.png', Game(False))
+        center_group = SimpleGroup([title, play_btn], 'v')
 
         other = SimpleGroup([close_btn, settings_btn, center_group])
 
-        settings_box = TitleBox('Settings', [Button('Settings Test')])
+        settings_btn.at_unclick = self.__wrap_settings(other)
+
+        return [other]
+
+    def __wrap_settings(self, other: Element) -> LauncherWrapper:
+        kandler = KeyEventHandler(True)
+        credits_btn = Button('Credits(F1)')
+        settings_box = TitleBox('Settings', [credits_btn])
         settings_box.set_opacity_bck_color(255)
         Screen.center(settings_box)
 
+        credits_box = TitleBox('Credits', [Text('Me')])
+        credits_box.set_opacity_bck_color(255)
+        Screen.center(credits_box)
+
         credits_wrapper = LauncherWrapper(lambda: credits_box.launch_and_lock_others(other))
-        self._key_handler += credits_wrapper, [], [K_F1]
+        credits_btn.at_unclick = credits_wrapper
+        kandler += credits_btn, [], [K_F1]
 
-        settings_wrapper = LauncherWrapper(lambda: settings_box.launch_and_lock_others(other))
-        settings_btn.at_unclick = settings_wrapper
-
-        return [other]
+        return LauncherWrapper(lambda: settings_box.launch_and_lock_others(other, kandler))

@@ -1,12 +1,11 @@
-import pygame as pg
-import thorpy as tp
+import pygame
+import thorpy
 from src.ui.home import Home
 
-pg.init()
-screen = pg.display.set_mode((800, 600))
-tp.set_default_font('consolas', 24)
-tp.init(screen, tp.theme_game1)
+pygame.init()
+screen = pygame.display.set_mode((800, 600))
+thorpy.set_default_font('consolas', 24)
+thorpy.init(screen, thorpy.theme_game1)
 
-home = Home()
-home()
-tp.exit_app()
+Home(False)()
+thorpy.exit_app()

@@ -1,5 +1,5 @@
 import pygame
-from pygame import Surface
+from pygame import K_ESCAPE, Surface
 from thorpy import Group, ImageButton, get_screen, Button
 from thorpy.canonical import Element, arrow_cursor
 from abc import ABC, abstractmethod
@@ -10,25 +10,25 @@ import operator
 type Action = Callable[[], Any]
 
 
-def SimpleGroup(elements: list[Element], mode: Optional[str] = None, gap: int = 0) -> Group:
-    '''
-    NOTE : SimpleGroup __init__ default parameters greatly differ from tp.Group
+class SimpleGroup(Group):
+    def __init__(self, elements: list[Element], mode: Optional[str] = None, gap: int = 0) -> None:
+        '''
+        NOTE : SimpleGroup __init__ default parameters greatly differ from tp.Group
 
-    - params
-        gap = 0
-        when mode is None, gap will not be used
-    '''
-    assert isinstance(elements, list) and all(isinstance(e, Element) for e in elements), 'method "_build()" should return list[Element]'
-    assert (mode is None or isinstance(mode, str)) and isinstance(gap, int)
-    group = Group(elements, mode, (0, 0), gap)
-    return group
+        - params
+            gap = 0
+            when mode is None, gap will not be used
+        '''
+        assert isinstance(elements, list) and all(isinstance(e, Element) for e in elements), 'param "elements" should be list[Element]'
+        assert (mode is None or isinstance(mode, str)) and isinstance(gap, int)
+        super().__init__(elements, mode, (0, 0), gap)
 
 
-def SimpleImageButton(filename: str, onclick: Optional[Action]) -> ImageButton:
-    assert isinstance(filename, str) and (onclick is None or callable(onclick))
-    btn = ImageButton('', pygame.image.load(f'assets/image/{filename}'))
-    btn.at_unclick = onclick
-    return btn
+class SimpleImageButton(ImageButton):
+    def __init__(self, filename: str, onclick: Optional[Action]) -> None:
+        assert isinstance(filename, str) and (onclick is None or callable(onclick))
+        super().__init__('', pygame.image.load(f'assets/image/{filename}'))
+        self.at_unclick = onclick
 
 
 class Screen():
@@ -56,7 +56,7 @@ class Screen():
 
 
 class KeyEventHandler:
-    class __KeyAction:
+    class KeyAction:
         def __init__(self, action: Action, mods: int, keys: list[int]) -> None:
             assert callable(action) and isinstance(mods, int) and isinstance(keys, list) and all(isinstance(k, int) for k in keys)
             self.occupied = False
@@ -64,8 +64,14 @@ class KeyEventHandler:
             self.mods = mods
             self.keys = keys
 
-    def __init__(self) -> None:
-        self.__kactions: set[KeyEventHandler.__KeyAction] = set()
+        def __eq__(self, value: object) -> bool:
+            if not isinstance(value, KeyEventHandler.KeyAction):
+                return False
+            return self.action == value.action and self.mods == value.mods and self.keys == value.keys
+
+    def __init__(self, esc_quit: bool) -> None:
+        self.__esc_quit = esc_quit
+        self.__kactions: list[KeyEventHandler.KeyAction] = []
 
     def __iadd__(self, args: tuple[Button | Action, list[int], list[int]]) -> "KeyEventHandler":
         '''
@@ -85,10 +91,12 @@ class KeyEventHandler:
         action = args[0] if callable(args[0]) else args[0].at_unclick
         mods = reduce(operator.or_, args[1], 0)
         keys = args[2]
-        kaction = KeyEventHandler.__KeyAction(action, mods, keys)
+        kaction = KeyEventHandler.KeyAction(action, mods, keys)
 
+        assert not self.__esc_quit or K_ESCAPE not in keys, 'esc_quit is on, you cannot register esc key'
         assert kaction not in self.__kactions, f'mod keys "{mods}", keys "{keys}" has already been registered'
-        self.__kactions.add(kaction)
+        self.__kactions.append(kaction)
+
         return self
 
     def __call__(self) -> None:
@@ -106,30 +114,38 @@ class KeyEventHandler:
                 if not kaction.occupied:
                     kaction.occupied = True
                     action()
+                    kaction.occupied = False
             else:
                 kaction.occupied = False  # others actions are not occupied
 
+    def clear(self) -> None:
+        self.__kactions.clear()
 
-def LauncherWrapper(launcher: Action) -> Action:
-    assert callable(launcher)
 
-    def action() -> None:
+class LauncherWrapper:
+    def __init__(self, launcher: Action) -> None:
+        assert callable(launcher)
+        self.__launcher = launcher
+
+    def __call__(self) -> None:
         pygame.mouse.set_cursor(arrow_cursor)  # patch
-        launcher()
-    return action
+        self.__launcher()
 
 
 class PageWrapper(ABC):
-    def __init__(self) -> None:
-        self._key_handler = KeyEventHandler()
+    def __init__(self, esc_quit: bool) -> None:
+        self._kandler = KeyEventHandler(esc_quit)
+        self._esc_quit = esc_quit
 
     def __call__(self) -> None:
-        elements = self._build()
-        assert isinstance(elements, list) and all(isinstance(e, Element) for e in elements), 'method "_build()" should return list[Element]'
-        elements = elements[0] if len(elements) == 1 else SimpleGroup(elements)
+        self._kandler.clear()
+        es = self._build()
+        assert isinstance(es, list) and all(isinstance(e, Element) for e in es), 'method "_build()" should return list[Element]'
+        es = es[0] if len(es) == 1 else SimpleGroup(es)
 
-        launcher = LauncherWrapper(lambda: elements.get_updater(esc_quit=True).launch(self._key_handler))
-        launcher()
+        def launcher() -> None:
+            es.get_updater(esc_quit=self._esc_quit).launch(self._kandler)
+        LauncherWrapper(launcher)()
 
     @abstractmethod
     def _build(self) -> list[Element]:
