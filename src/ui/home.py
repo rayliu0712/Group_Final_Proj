@@ -1,6 +1,6 @@
 from pygame import K_F1
 from thorpy import Button, exit_app, OutlinedText, TitleBox, Text
-from .core import KeyEventHandler, LauncherWrapper, Screen, PageWrapper, SimpleGroup, SimpleImageButton, Element, Action
+from .core import KeyEventHandler, LauncherWrapper, Screen, PageWrapper, SimpleGroup, SimpleImageButton
 from .game import Game
 
 

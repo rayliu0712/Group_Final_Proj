@@ -1,5 +1,5 @@
 from thorpy import quit_current_loop, OutlinedText
-from .core import Screen, PageWrapper, SimpleGroup, SimpleImageButton
+from .core import Screen, PageWrapper, SimpleGroup
 from pygame import KMOD_ALT, K_q
 
 
