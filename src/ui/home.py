@@ -23,7 +23,7 @@ class Home(PageWrapper):
 
         return [other]
 
-    def __wrap_settings(self, other: Element) -> LauncherWrapper:
+    def __wrap_settings(self, other: SimpleGroup) -> LauncherWrapper:
         kandler = KeyEventHandler(True)
         credits_btn = Button('Credits(F1)')
         settings_box = TitleBox('Settings', [credits_btn])
