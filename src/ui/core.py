@@ -1,10 +1,16 @@
-import pygame
-from pygame import K_ESCAPE, Surface
-from thorpy import Group, ImageButton, get_screen, Button
-from thorpy.canonical import Element, arrow_cursor
+from typing import Callable, Any, Optional, Self
 from abc import ABC, abstractmethod
-from typing import Callable, Any, Optional
-from functools import reduce
+
+from thorpy.elements import *
+from thorpy.canonical import Element
+from thorpy.loops import quit_current_loop, exit_app
+
+from pygame.constants import *
+from pygame.surface import Surface
+
+import pygame
+import thorpy
+import functools
 import operator
 
 type Action = Callable[[], Any]
@@ -32,14 +38,10 @@ class SimpleImageButton(ImageButton):
 
 
 class Screen():
-    __instance: Optional[Surface] = None
 
     # Singleton
     def __new__(cls) -> Surface:
-        if Screen.__instance is None:
-            Screen.__instance = get_screen()
-        assert Screen.__instance is not None
-        return Screen.__instance
+        return thorpy.parameters.screen
 
     @staticmethod
     def center(element: Element) -> None:
@@ -55,8 +57,8 @@ class Screen():
         return Screen().get_height()
 
 
-class KeyEventHandler:
-    class KeyAction:
+class _KeyEventHandler:
+    class _KeyAction:
         def __init__(self, action: Action, mods: int, keys: list[int]) -> None:
             assert callable(action) and isinstance(mods, int) and isinstance(keys, list) and all(isinstance(k, int) for k in keys)
             self.occupied = False
@@ -65,15 +67,15 @@ class KeyEventHandler:
             self.keys = keys
 
         def __eq__(self, value: object) -> bool:
-            if not isinstance(value, KeyEventHandler.KeyAction):
+            if not isinstance(value, _KeyEventHandler._KeyAction):
                 return False
             return self.action == value.action and self.mods == value.mods and self.keys == value.keys
 
     def __init__(self, esc_quit: bool) -> None:
-        self.__esc_quit = esc_quit
-        self.__kactions: list[KeyEventHandler.KeyAction] = []
+        self.esc_quit = esc_quit
+        self.__kactions: list[_KeyEventHandler._KeyAction] = []
 
-    def __iadd__(self, args: tuple[Button | Action, list[int], list[int]]) -> "KeyEventHandler":
+    def __iadd__(self, args: tuple[Button | Action, list[int], list[int]]) -> Self:
         '''
         args[0] : button or action
         args[1] : mod keys, list[int] (can be empty)
@@ -89,11 +91,11 @@ class KeyEventHandler:
         assert args[2], 'list "key_action[2]" cannot be empty'
 
         action = args[0] if callable(args[0]) else args[0].at_unclick
-        mods = reduce(operator.or_, args[1], 0)
+        mods = functools.reduce(operator.or_, args[1], 0)
         keys = args[2]
-        kaction = KeyEventHandler.KeyAction(action, mods, keys)
+        kaction = _KeyEventHandler._KeyAction(action, mods, keys)
 
-        assert not self.__esc_quit or K_ESCAPE not in keys, 'esc_quit is on, you cannot register esc key'
+        assert not self.esc_quit or K_ESCAPE not in keys, 'esc_quit is on, you cannot register esc key'
         assert kaction not in self.__kactions, f'the combination key has already been registered'
         self.__kactions.append(kaction)
 
@@ -122,30 +124,56 @@ class KeyEventHandler:
         self.__kactions.clear()
 
 
-class LauncherWrapper:
-    def __init__(self, launcher: Action) -> None:
-        assert callable(launcher)
-        self.__launcher = launcher
+def _fix_new_loop_cursor() -> None:
+    pygame.mouse.set_cursor(thorpy.canonical.arrow_cursor)
+
+
+class Popup:
+    def __init__(self) -> None:
+        '''
+        WARNING : don't construt popup_wrapper by construtor. Instead, use class method
+        '''
+        self.launcher: Action
+        self.kandler = _KeyEventHandler(True)
+
+    @classmethod
+    def Alone(cls, element: Element) -> Self:
+        popup_wrapper = cls()
+        popup_wrapper.launcher = lambda: element.launch_alone(popup_wrapper.kandler)
+        return popup_wrapper
+
+    @classmethod
+    def LockAndLaunch(cls, be_locked_element: Element, be_launched_element: Element) -> Self:
+        popup_wrapper = cls()
+        popup_wrapper.launcher = lambda: be_launched_element.launch_and_lock_others(be_locked_element, popup_wrapper.kandler)
+        return popup_wrapper
+
+    @classmethod
+    def Merge(cls, element: Element, click_outside_cancel: bool) -> Self:
+        popup_wrapper = cls()
+        popup_wrapper.launcher = lambda: element.launch_nonblocking(click_outside_cancel=click_outside_cancel)
+        return popup_wrapper
 
     def __call__(self) -> None:
-        pygame.mouse.set_cursor(arrow_cursor)  # patch
-        self.__launcher()
+        _fix_new_loop_cursor()
+        self.launcher()
 
 
-class PageWrapper(ABC):
-    def __init__(self, esc_quit: bool) -> None:
-        self._kandler = KeyEventHandler(esc_quit)
-        self._esc_quit = esc_quit
+class Page(ABC):
+    def __init__(self) -> None:
+        self._kandler = _KeyEventHandler(False)
+        self._kandler.esc_quit = False
 
     def __call__(self) -> None:
         self._kandler.clear()
         es = self._build()
         assert isinstance(es, list) and all(isinstance(e, Element) for e in es), 'method "_build()" should return list[Element]'
-        es = es[0] if len(es) == 1 else SimpleGroup(es)
 
-        def launcher() -> None:
-            es.get_updater(esc_quit=self._esc_quit).launch(self._kandler)
-        LauncherWrapper(launcher)()
+        _fix_new_loop_cursor()
+        if len(es) == 1:
+            es[0].get_updater().launch(self._kandler)
+        else:
+            SimpleGroup(es).get_updater().launch(self._kandler)
 
     @abstractmethod
     def _build(self) -> list[Element]:

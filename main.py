@@ -7,5 +7,5 @@ screen = pygame.display.set_mode((800, 600))
 thorpy.set_default_font('consolas', 24)
 thorpy.init(screen, thorpy.theme_game1)
 
-Home(False)()
+Home()()
 thorpy.exit_app()
