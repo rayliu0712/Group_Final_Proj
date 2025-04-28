@@ -13,27 +13,24 @@ class Home(Page):
 
         title = OutlinedText('ERIKA', 72)
         play_btn = SimpleImageButton('play_72dp.png', Game())
-        center_group = SimpleGroup([title, play_btn], 'v')
+        center_group = Group([title, play_btn])
 
-        other = SimpleGroup([close_btn, settings_btn, center_group])
+        main_elements = [close_btn, settings_btn, center_group]
 
-        settings_btn.at_unclick = self.__pop_up_settings(other)
+        settings_btn.at_unclick = self.__popup_settings(main_elements)
 
-        return [other]
+        return main_elements
 
-    def __pop_up_settings(self, other: SimpleGroup) -> Popup:
+    def __popup_settings(self, be_locked_elements: list[Element]) -> Popup:
         credits_btn = Button('Credits(F1)')
-        settings_box = TitleBox('Settings', [credits_btn])
-        settings_box.set_opacity_bck_color(255)
+        settings_box = SimpleTitleBox('Settings', [credits_btn])
         Screen.center(settings_box)
-        settings_popup = Popup.LockAndLaunch(other, settings_box)
+        settings_popup = Popup.LockAndLaunch(be_locked_elements, settings_box)
 
-        credits_box = TitleBox('Credits', [Text('Me')])
-        credits_box.set_opacity_bck_color(255)
+        credits_box = SimpleTitleBox('Credits', [Text('Me')])
         Screen.center(credits_box)
 
-        credits_btn.at_unclick = Popup.LockAndLaunch(other, credits_box)
-
+        credits_btn.at_unclick = Popup.LockAndLaunch(be_locked_elements, credits_box)
         settings_popup.kandler += credits_btn, [], [K_F1]
 
         return settings_popup

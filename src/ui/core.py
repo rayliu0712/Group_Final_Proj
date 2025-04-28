@@ -1,8 +1,8 @@
-from typing import Callable, Any, Optional, Self
+from .check import *
 from abc import ABC, abstractmethod
+from enum import Enum
 
 from thorpy.elements import *
-from thorpy.canonical import Element
 from thorpy.loops import quit_current_loop, exit_app
 
 from pygame.constants import *
@@ -13,39 +13,39 @@ import thorpy
 import functools
 import operator
 
-type Action = Callable[[], Any]
+
+class SimpleTitleBox(TitleBox):
+    def __init__(self, title: str, children: list[Element], mode: Optional[str] = 'v'):
+        assert iselist(children), 'param "children" should be list[Element]'
+        assert isstr(title)
+        super().__init__(title, children, False)
+        if mode:
+            super().sort_children(mode)
+        super().set_opacity_bck_color(191)  # 256 * 3/4 - 1
 
 
-class SimpleGroup(Group):
-    def __init__(self, elements: list[Element], mode: Optional[str] = None, gap: int = 0) -> None:
-        '''
-        NOTE : SimpleGroup __init__ default parameters greatly differ from tp.Group
-
-        - params
-            gap = 0
-            when mode is None, gap will not be used
-        '''
-        assert isinstance(elements, list) and all(isinstance(e, Element) for e in elements), 'param "elements" should be list[Element]'
-        assert (mode is None or isinstance(mode, str)) and isinstance(gap, int)
-        super().__init__(elements, mode, (0, 0), gap)
+class SimpleButton(Button):
+    def __init__(self, text: str, onclick: Optional[Action]):
+        assert isstr(text) and isoptcall(onclick)
+        super().__init__(text)
+        self.at_unclick = onclick
 
 
 class SimpleImageButton(ImageButton):
-    def __init__(self, filename: str, onclick: Optional[Action]) -> None:
-        assert isinstance(filename, str) and (onclick is None or callable(onclick))
+    def __init__(self, filename: str, onclick: Optional[Action]):
+        assert isstr(filename) and isoptcall(onclick)
         super().__init__('', pygame.image.load(f'assets/image/{filename}'))
         self.at_unclick = onclick
 
 
 class Screen():
-
     # Singleton
     def __new__(cls) -> Surface:
         return thorpy.parameters.screen
 
     @staticmethod
     def center(element: Element) -> None:
-        assert isinstance(element, Element)
+        assert ise(element)
         element.center_on(Screen())
 
     @staticmethod
@@ -59,8 +59,7 @@ class Screen():
 
 class _KeyEventHandler:
     class _KeyAction:
-        def __init__(self, action: Action, mods: int, keys: list[int]) -> None:
-            assert callable(action) and isinstance(mods, int) and isinstance(keys, list) and all(isinstance(k, int) for k in keys)
+        def __init__(self, action: Action, mods: int, keys: list[int]):
             self.occupied = False
             self.action = action
             self.mods = mods
@@ -71,8 +70,8 @@ class _KeyEventHandler:
                 return False
             return self.action == value.action and self.mods == value.mods and self.keys == value.keys
 
-    def __init__(self, esc_quit: bool) -> None:
-        self.esc_quit = esc_quit
+    def __init__(self, is_esc_quit: bool):
+        self.__is_esc_quit = is_esc_quit
         self.__kactions: list[_KeyEventHandler._KeyAction] = []
 
     def __iadd__(self, args: tuple[Button | Action, list[int], list[int]]) -> Self:
@@ -81,11 +80,10 @@ class _KeyEventHandler:
         args[1] : mod keys, list[int] (can be empty)
         args[2] : keys, list[int] (cannot be empty)
         '''
-        assert (isinstance(args, tuple) and
-                len(args) == 3 and
+        assert (istuple3(args) and
                 (callable(args[0]) or isinstance(args[0], Button)) and
-                isinstance(args[1], list) and all(isinstance(mod, int) for mod in args[1]) and
-                isinstance(args[2], list) and all(isinstance(key, int) for key in args[2])
+                isintlist(args[1]) and
+                isintlist(args[2])
                 ), 'param "key_action" should be tuple[Button | Action, list[int], list[int]]'
 
         assert args[2], 'list "key_action[2]" cannot be empty'
@@ -95,7 +93,7 @@ class _KeyEventHandler:
         keys = args[2]
         kaction = _KeyEventHandler._KeyAction(action, mods, keys)
 
-        assert not self.esc_quit or K_ESCAPE not in keys, 'esc_quit is on, you cannot register esc key'
+        assert not (self.__is_esc_quit and K_ESCAPE in keys), 'esc quit is on, you cannot register esc key'
         assert kaction not in self.__kactions, f'the combination key has already been registered'
         self.__kactions.append(kaction)
 
@@ -129,51 +127,61 @@ def _fix_new_loop_cursor() -> None:
 
 
 class Popup:
-    def __init__(self) -> None:
+    def __init__(self):
         '''
         WARNING : don't construt popup_wrapper by construtor. Instead, use class method
+        Popup is lazy, call its instance to show
         '''
-        self.launcher: Action
         self.kandler = _KeyEventHandler(True)
+
+    def __call__(self) -> None:
+        _fix_new_loop_cursor()
+        self.launch()
+
+    def launch(self) -> None:
+        pass
 
     @classmethod
     def Alone(cls, element: Element) -> Self:
+        assert ise(element)
         popup_wrapper = cls()
-        popup_wrapper.launcher = lambda: element.launch_alone(popup_wrapper.kandler)
+        popup_wrapper.launch = lambda: element.launch_alone(popup_wrapper.kandler)
         return popup_wrapper
 
     @classmethod
-    def LockAndLaunch(cls, be_locked_element: Element, be_launched_element: Element) -> Self:
+    def LockAndLaunch(cls, be_locked_elements: list[Element], be_launched_element: Element) -> Self:
+        assert iselist(be_locked_elements) and ise(be_launched_element)
+        be_locked_elements = be_locked_elements[0] if len(be_locked_elements) == 1 else Group(be_locked_elements, None)
+
         popup_wrapper = cls()
-        popup_wrapper.launcher = lambda: be_launched_element.launch_and_lock_others(be_locked_element, popup_wrapper.kandler)
+        popup_wrapper.launch = lambda: be_launched_element.launch_and_lock_others(be_locked_elements, popup_wrapper.kandler)
         return popup_wrapper
 
     @classmethod
     def Merge(cls, element: Element, click_outside_cancel: bool) -> Self:
+        assert ise(element)
         popup_wrapper = cls()
-        popup_wrapper.launcher = lambda: element.launch_nonblocking(click_outside_cancel=click_outside_cancel)
+        popup_wrapper.launch = lambda: element.launch_nonblocking(click_outside_cancel=click_outside_cancel)
         return popup_wrapper
-
-    def __call__(self) -> None:
-        _fix_new_loop_cursor()
-        self.launcher()
 
 
 class Page(ABC):
     def __init__(self) -> None:
+        '''
+        Page is lazy, call its instance to show
+        '''
         self._kandler = _KeyEventHandler(False)
-        self._kandler.esc_quit = False
 
     def __call__(self) -> None:
         self._kandler.clear()
         es = self._build()
-        assert isinstance(es, list) and all(isinstance(e, Element) for e in es), 'method "_build()" should return list[Element]'
+        assert iselist(es), 'method "_build()" should return list[Element]'
 
         _fix_new_loop_cursor()
         if len(es) == 1:
             es[0].get_updater().launch(self._kandler)
         else:
-            SimpleGroup(es).get_updater().launch(self._kandler)
+            Group(es, None).get_updater().launch(self._kandler)
 
     @abstractmethod
     def _build(self) -> list[Element]:
