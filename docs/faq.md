@@ -23,4 +23,4 @@ src/ui/core.py (簡稱 core.py) 提供了基於 Thorpy2 的 UI 元件封裝，�
 
 ## 看完了嗎 ?
 
-前往 **get_started.md**
+前往 [新手上路](get_started.md)

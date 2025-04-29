@@ -123,4 +123,4 @@ Screen.center(element)  # 元件置中
 
 ## 看完了嗎 ?
 
-前往 **page.md**
+前往 [頁面](page.md)
