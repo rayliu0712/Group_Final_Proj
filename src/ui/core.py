@@ -38,15 +38,10 @@ class SimpleTitleBox(TitleBox):
         super().set_opacity_bck_color(191)  # 256 * 3/4 - 1
 
 
-class Screen():
+class Screen:
     # Singleton
     def __new__(cls) -> Surface:
         return thorpy.parameters.screen
-
-    @staticmethod
-    def center(element: Element) -> None:
-        assert ise(element)
-        element.center_on(Screen())
 
     @staticmethod
     def width() -> int:
@@ -55,6 +50,31 @@ class Screen():
     @staticmethod
     def height() -> int:
         return Screen().get_height()
+
+    @staticmethod
+    def center(element: Element) -> None:
+        assert ise(element)
+        element.center_on(Screen())
+
+    @staticmethod
+    def topleft(element: Element) -> None:
+        assert ise(element)
+        element.set_topleft(0, 0)
+
+    @staticmethod
+    def topright(element: Element) -> None:
+        assert ise(element)
+        element.set_topright(Screen.width(), 0)
+
+    @staticmethod
+    def bottomleft(element: Element) -> None:
+        assert ise(element)
+        element.set_bottomleft(0, Screen.height())
+
+    @staticmethod
+    def bottomright(element: Element) -> None:
+        assert ise(element)
+        element.set_bottomright(Screen.width(), Screen.height())
 
 
 class _KeyEventHandler:

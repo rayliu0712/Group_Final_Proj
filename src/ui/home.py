@@ -6,14 +6,15 @@ class Home(Page):
 
     def _build(self):
         close_btn = SimpleImageButton('close_72dp.png', exit_app)
-        close_btn.set_topright(Screen.width(), 0)
+        Screen.topright(close_btn)
 
         settings_btn = SimpleImageButton('settings_72dp.png')
-        settings_btn.set_topleft(0, 0)
+        Screen.topleft(settings_btn)
 
         title = OutlinedText('ERIKA', 72)
         play_btn = SimpleImageButton('play_72dp.png', Game())
         center_group = Group([title, play_btn])
+        Screen.center(center_group)
 
         main_elements = [close_btn, settings_btn, center_group]
 
