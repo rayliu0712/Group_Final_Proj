@@ -8,7 +8,7 @@ class Home(Page):
         close_btn = SimpleImageButton('close_72dp.png', exit_app)
         close_btn.set_topright(Screen.width(), 0)
 
-        settings_btn = SimpleImageButton('settings_72dp.png', None)
+        settings_btn = SimpleImageButton('settings_72dp.png')
         settings_btn.set_topleft(0, 0)
 
         title = OutlinedText('ERIKA', 72)

@@ -14,6 +14,20 @@ import functools
 import operator
 
 
+class SimpleButton(Button):
+    def __init__(self, text: str, onclick: Optional[Action] = None):
+        assert isstr(text) and isoptcall(onclick)
+        super().__init__(text)
+        self.at_unclick = onclick
+
+
+class SimpleImageButton(ImageButton):
+    def __init__(self, filename: str, onclick: Optional[Action] = None):
+        assert isstr(filename) and isoptcall(onclick)
+        super().__init__('', pygame.image.load(f'assets/image/{filename}'))
+        self.at_unclick = onclick
+
+
 class SimpleTitleBox(TitleBox):
     def __init__(self, title: str, children: list[Element], mode: Optional[str] = 'v'):
         assert iselist(children), 'param "children" should be list[Element]'
@@ -22,20 +36,6 @@ class SimpleTitleBox(TitleBox):
         if mode:
             super().sort_children(mode)
         super().set_opacity_bck_color(191)  # 256 * 3/4 - 1
-
-
-class SimpleButton(Button):
-    def __init__(self, text: str, onclick: Optional[Action]):
-        assert isstr(text) and isoptcall(onclick)
-        super().__init__(text)
-        self.at_unclick = onclick
-
-
-class SimpleImageButton(ImageButton):
-    def __init__(self, filename: str, onclick: Optional[Action]):
-        assert isstr(filename) and isoptcall(onclick)
-        super().__init__('', pygame.image.load(f'assets/image/{filename}'))
-        self.at_unclick = onclick
 
 
 class Screen():
