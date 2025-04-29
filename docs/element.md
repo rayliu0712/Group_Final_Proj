@@ -75,13 +75,10 @@ box = SimpleTitleBox('Choose Difficulty', [easy_button, hard_button], 'h')
 ### 定義
 
 ```py
-class Screen():
+class Screen:
+    # Singleton
     def __new__(cls) -> Surface:
         return thorpy.parameters.screen
-
-    @staticmethod
-    def center(element: Element) -> None:
-        element.center_on(Screen())
 
     @staticmethod
     def width() -> int:
@@ -90,6 +87,26 @@ class Screen():
     @staticmethod
     def height() -> int:
         return Screen().get_height()
+
+    @staticmethod
+    def center(element: Element) -> None:
+        element.center_on(Screen())
+
+    @staticmethod
+    def topleft(element: Element) -> None:
+        element.set_topleft(0, 0)
+
+    @staticmethod
+    def topright(element: Element) -> None:
+        element.set_topright(Screen.width(), 0)
+
+    @staticmethod
+    def bottomleft(element: Element) -> None:
+        element.set_bottomleft(0, Screen.height())
+
+    @staticmethod
+    def bottomright(element: Element) -> None:
+        element.set_bottomright(Screen.width(), Screen.height())
 ```
 
 ### 範例
@@ -99,26 +116,12 @@ screen = Screen()  # 取得螢幕，通常情況下不會有需要取得螢幕�
 
 screen_width = Screen.width()  # 取得螢幕的寬
 screen_height = Screen.height()  # 取得螢幕的長
-```
 
-## 元件對齊
-
-### 定義
-
-元件的 `左上角/右上角/左下角/右下角/中間` 對齊到 `螢幕的(x, y)`
-
-螢幕的 x 從左到右，螢幕的 y 從上到下。螢幕左上角為 (0, 0)，螢幕右下角為 (螢幕寬, 螢幕高)
-
-```py
-element.set_topleft(0, 0) # 元件左上角對齊到 螢幕的(0, 0)
-
-element.set_topright(Screen.width(), 0) # 元件右上角對齊到 螢幕的(螢幕寬, 0)
-
-element.set_bottomleft(0, Screen.height())  # 元件左下角對齊到 螢幕的(0, 螢幕高)
-
-element.set_bottomright(Screen.width(), Screen.height())  # 元件左下角對齊到 螢幕的(螢幕寬, 螢幕高)
-
-Screen.center(element)  # 元件置中
+Screen.center(element)  # 置中
+Screen.topleft(element)  # 置於左上角
+Screen.topright(element)  # 置於右上角
+Screen.bottomleft(element)  # 置於左下角
+Screen.bottomright(element)  # 置於右下角
 ```
 
 ## 看完了嗎 ?
