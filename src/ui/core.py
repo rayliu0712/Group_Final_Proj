@@ -14,6 +14,16 @@ import functools
 import operator
 
 
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
+CYAN = (0, 255, 255)
+MAGENTA = (255, 0, 255)
+WHITE = (255, 255, 255)
+
+
 class SimpleButton(Button):
     def __init__(self, text: str, onclick: Optional[Action] = None):
         assert isstr(text) and isoptcall(onclick)
@@ -24,14 +34,23 @@ class SimpleButton(Button):
 class SimpleImageButton(ImageButton):
     def __init__(self, filename: str, onclick: Optional[Action] = None):
         assert isstr(filename) and isoptcall(onclick)
-        super().__init__('', pygame.image.load(f'assets/image/{filename}'))
+        super().__init__("", pygame.image.load(f"assets/image/{filename}"))
         self.at_unclick = onclick
 
 
+class SimpleBox(Box):
+    def __init__(self, children: list[Element], mode: Optional[str] = "v"):
+        assert iselist(children), "param 'children' should be list[Element]"
+        assert isoptstr(mode)
+        super().__init__(children, False)
+        if mode:
+            super().sort_children(mode)
+
+
 class SimpleTitleBox(TitleBox):
-    def __init__(self, title: str, children: list[Element], mode: Optional[str] = 'v'):
-        assert iselist(children), 'param "children" should be list[Element]'
-        assert isstr(title)
+    def __init__(self, title: str, children: list[Element], mode: Optional[str] = "v"):
+        assert iselist(children), "param 'children' should be list[Element]"
+        assert isstr(title) and isoptstr(mode)
         super().__init__(title, children, False)
         if mode:
             super().sort_children(mode)
@@ -52,29 +71,29 @@ class Screen:
         return Screen().get_height()
 
     @staticmethod
-    def center(element: Element) -> None:
+    def center(element: Element, margin: tuple[int, int] = (0, 0)) -> None:
         assert ise(element)
-        element.center_on(Screen())
+        element.set_center(Screen.width() // 2 + margin[0], Screen.height() // 2 + margin[1])
 
     @staticmethod
-    def topleft(element: Element) -> None:
+    def topleft(element: Element, margin: tuple[int, int] = (0, 0)) -> None:
         assert ise(element)
-        element.set_topleft(0, 0)
+        element.set_topleft(0 + margin[0], 0 + margin[1])
 
     @staticmethod
-    def topright(element: Element) -> None:
+    def topright(element: Element, margin: tuple[int, int] = (0, 0)) -> None:
         assert ise(element)
-        element.set_topright(Screen.width(), 0)
+        element.set_topright(Screen.width() + margin[0], 0 + margin[1])
 
     @staticmethod
-    def bottomleft(element: Element) -> None:
+    def bottomleft(element: Element, margin: tuple[int, int] = (0, 0)) -> None:
         assert ise(element)
-        element.set_bottomleft(0, Screen.height())
+        element.set_bottomleft(0 + margin[0], Screen.height() + margin[1])
 
     @staticmethod
-    def bottomright(element: Element) -> None:
+    def bottomright(element: Element, margin: tuple[int, int] = (0, 0)) -> None:
         assert ise(element)
-        element.set_bottomright(Screen.width(), Screen.height())
+        element.set_bottomright(Screen.width() + margin[0], Screen.height() + margin[1])
 
 
 class _KeyEventHandler:
@@ -95,31 +114,31 @@ class _KeyEventHandler:
         self.__kactions: list[_KeyEventHandler._KeyAction] = []
 
     def __iadd__(self, args: tuple[Button | Action, list[int], list[int]]) -> Self:
-        '''
+        """
         args[0] : button or action
         args[1] : mod keys, list[int] (can be empty)
         args[2] : keys, list[int] (cannot be empty)
-        '''
+        """
         assert (istuple3(args) and
                 (callable(args[0]) or isinstance(args[0], Button)) and
                 isintlist(args[1]) and
                 isintlist(args[2])
-                ), 'param "key_action" should be tuple[Button | Action, list[int], list[int]]'
+                ), "param 'key_action' should be tuple[Button | Action, list[int], list[int]]"
 
-        assert args[2], 'list "key_action[2]" cannot be empty'
+        assert args[2], "list 'key_action[2]' cannot be empty"
 
         if callable(args[0]):
             action = args[0]
         else:
-            assert args[0] is not None, 'button onclick cannot be None'
+            assert args[0] is not None, "button onclick cannot be None"
             action = args[0].at_unclick
 
         mods = functools.reduce(operator.or_, args[1], 0)
         keys = args[2]
         kaction = _KeyEventHandler._KeyAction(action, mods, keys)
 
-        assert not (self.__is_esc_quit and K_ESCAPE in keys), 'esc quit is on, you cannot register esc key'
-        assert kaction not in self.__kactions, f'the combination key has already been registered'
+        assert not (self.__is_esc_quit and K_ESCAPE in keys), "esc quit is on, you cannot register esc key"
+        assert kaction not in self.__kactions, f"the combination key has already been registered"
         self.__kactions.append(kaction)
 
         return self
@@ -153,10 +172,10 @@ def _fix_new_loop_cursor() -> None:
 
 class Popup:
     def __init__(self):
-        '''
-        WARNING : don't construt popup_wrapper by construtor. Instead, use class method
+        """
+        WARNING : don"t construt popup_wrapper by construtor. Instead, use class method
         Popup is lazy, call its instance to show
-        '''
+        """
         self.kandler = _KeyEventHandler(True)
 
     def __call__(self) -> None:
@@ -192,21 +211,24 @@ class Popup:
 
 class Page(ABC):
     def __init__(self) -> None:
-        '''
+        """
         Page is lazy, call its instance to show
-        '''
+        """
         self._kandler = _KeyEventHandler(False)
 
     def __call__(self) -> None:
         self._kandler.clear()
         es = self._build()
-        assert iselist(es), 'method "_build()" should return list[Element]'
+        assert iselist(es), "method '_build()' should return list[Element]"
 
         _fix_new_loop_cursor()
-        if len(es) == 1:
-            es[0].get_updater().launch(self._kandler)
-        else:
-            Group(es, None).get_updater().launch(self._kandler)
+        match len(es):
+            case 0:
+                pass
+            case 1:
+                es[0].get_updater().launch(self._kandler)
+            case _:
+                Group(es, None).get_updater().launch(self._kandler)
 
     @abstractmethod
     def _build(self) -> list[Element]:
