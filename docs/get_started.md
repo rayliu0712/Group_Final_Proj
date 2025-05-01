@@ -106,4 +106,4 @@ player = title.get_updater().launch()  # 啟動 Thorpy2 的內建事件循環
 
 ## 看完了嗎 ?
 
-前往 [元件](element.md)
+前往 [Element 元件](element.md)

@@ -126,4 +126,4 @@ Screen.bottomright(element)  # 置於右下角
 
 ## 看完了嗎 ?
 
-前往 [頁面](page.md)
+前往 [Page 頁面](page.md)

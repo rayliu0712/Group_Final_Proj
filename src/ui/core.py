@@ -108,7 +108,12 @@ class _KeyEventHandler:
 
         assert args[2], 'list "key_action[2]" cannot be empty'
 
-        action = args[0] if callable(args[0]) else args[0].at_unclick
+        if callable(args[0]):
+            action = args[0]
+        else:
+            assert args[0] is not None, 'button onclick cannot be None'
+            action = args[0].at_unclick
+
         mods = functools.reduce(operator.or_, args[1], 0)
         keys = args[2]
         kaction = _KeyEventHandler._KeyAction(action, mods, keys)
