@@ -1,17 +1,18 @@
-from .check import *
+from typing import Callable, Any, Optional, Self
 from abc import ABC, abstractmethod
-from enum import Enum
 
-from thorpy.elements import *
+import thorpy
 from thorpy.loops import quit_current_loop, exit_app
-
-from pygame.constants import *
-from pygame.surface import Surface
+from thorpy.elements import *
 
 import pygame
-import thorpy
+from pygame.surface import Surface
+from pygame.constants import *
+
 import functools
 import operator
+
+type Action = Callable[[], Any]
 
 
 BLACK = (0, 0, 0)
@@ -24,37 +25,31 @@ MAGENTA = (255, 0, 255)
 WHITE = (255, 255, 255)
 
 
-class SimpleButton(Button):
-    def __init__(self, text: str, onclick: Optional[Action] = None):
-        assert isstr(text) and isoptcall(onclick)
-        super().__init__(text)
-        self.at_unclick = onclick
+def mkButton(text: str, onclick: Optional[Action] = None) -> Button:
+    btn = Button(text)
+    btn.at_unclick = onclick
+    return btn
 
 
-class SimpleImageButton(ImageButton):
-    def __init__(self, filename: str, onclick: Optional[Action] = None):
-        assert isstr(filename) and isoptcall(onclick)
-        super().__init__("", pygame.image.load(f"assets/image/{filename}"))
-        self.at_unclick = onclick
+def mkImageButton(filename: str, onclick: Optional[Action] = None) -> ImageButton:
+    imgbtn = ImageButton("", pygame.image.load(f"assets/image/{filename}"))
+    imgbtn.at_unclick = onclick
+    return imgbtn
 
 
-class SimpleBox(Box):
-    def __init__(self, children: list[Element], mode: Optional[str] = "v"):
-        assert iselist(children), "param 'children' should be list[Element]"
-        assert isoptstr(mode)
-        super().__init__(children, False)
-        if mode:
-            super().sort_children(mode)
+def mkBox(children: list[Element], mode: Optional[str] = "v") -> Box:
+    box = Box(children, False)
+    if mode:
+        box.sort_children(mode)
+    return box
 
 
-class SimpleTitleBox(TitleBox):
-    def __init__(self, title: str, children: list[Element], mode: Optional[str] = "v"):
-        assert iselist(children), "param 'children' should be list[Element]"
-        assert isstr(title) and isoptstr(mode)
-        super().__init__(title, children, False)
-        if mode:
-            super().sort_children(mode)
-        super().set_opacity_bck_color(191)  # 256 * 3/4 - 1
+def mkTitleBox(title: str, children: list[Element], mode: Optional[str] = "v") -> Box:
+    titlebox = TitleBox(title, children, False)
+    if mode:
+        titlebox.sort_children(mode)
+    titlebox.set_opacity_bck_color(191)  # 256 * 3/4 - 1
+    return titlebox
 
 
 class Screen:
@@ -72,27 +67,22 @@ class Screen:
 
     @staticmethod
     def center(element: Element, margin: tuple[int, int] = (0, 0)) -> None:
-        assert ise(element)
         element.set_center(Screen.width() // 2 + margin[0], Screen.height() // 2 + margin[1])
 
     @staticmethod
     def topleft(element: Element, margin: tuple[int, int] = (0, 0)) -> None:
-        assert ise(element)
         element.set_topleft(0 + margin[0], 0 + margin[1])
 
     @staticmethod
     def topright(element: Element, margin: tuple[int, int] = (0, 0)) -> None:
-        assert ise(element)
         element.set_topright(Screen.width() + margin[0], 0 + margin[1])
 
     @staticmethod
     def bottomleft(element: Element, margin: tuple[int, int] = (0, 0)) -> None:
-        assert ise(element)
         element.set_bottomleft(0 + margin[0], Screen.height() + margin[1])
 
     @staticmethod
     def bottomright(element: Element, margin: tuple[int, int] = (0, 0)) -> None:
-        assert ise(element)
         element.set_bottomright(Screen.width() + margin[0], Screen.height() + margin[1])
 
 
@@ -119,26 +109,15 @@ class _KeyEventHandler:
         args[1] : mod keys, list[int] (can be empty)
         args[2] : keys, list[int] (cannot be empty)
         """
-        assert (istuple3(args) and
-                (callable(args[0]) or isinstance(args[0], Button)) and
-                isintlist(args[1]) and
-                isintlist(args[2])
-                ), "param 'key_action' should be tuple[Button | Action, list[int], list[int]]"
-
-        assert args[2], "list 'key_action[2]' cannot be empty"
-
-        if callable(args[0]):
-            action = args[0]
-        else:
-            assert args[0] is not None, "button onclick cannot be None"
-            action = args[0].at_unclick
-
+        action = args[0] if callable(args[0]) else args[0].at_unclick
         mods = functools.reduce(operator.or_, args[1], 0)
         keys = args[2]
         kaction = _KeyEventHandler._KeyAction(action, mods, keys)
 
-        assert not (self.__is_esc_quit and K_ESCAPE in keys), "esc quit is on, you cannot register esc key"
-        assert kaction not in self.__kactions, f"the combination key has already been registered"
+        if self.__is_esc_quit and K_ESCAPE in keys:
+            raise Exception("esc quit is on, you cannot register esc key")
+        if kaction in self.__kactions:
+            raise Exception("the combination key has already been registered")
         self.__kactions.append(kaction)
 
         return self
@@ -187,14 +166,12 @@ class Popup:
 
     @classmethod
     def Alone(cls, element: Element) -> Self:
-        assert ise(element)
         popup_wrapper = cls()
         popup_wrapper.launch = lambda: element.launch_alone(popup_wrapper.kandler)
         return popup_wrapper
 
     @classmethod
     def LockAndLaunch(cls, be_locked_elements: list[Element], be_launched_element: Element) -> Self:
-        assert iselist(be_locked_elements) and ise(be_launched_element)
         be_locked_elements = be_locked_elements[0] if len(be_locked_elements) == 1 else Group(be_locked_elements, None)
 
         popup_wrapper = cls()
@@ -203,7 +180,6 @@ class Popup:
 
     @classmethod
     def Merge(cls, element: Element, click_outside_cancel: bool) -> Self:
-        assert ise(element)
         popup_wrapper = cls()
         popup_wrapper.launch = lambda: element.launch_nonblocking(click_outside_cancel=click_outside_cancel)
         return popup_wrapper
@@ -219,7 +195,6 @@ class Page(ABC):
     def __call__(self) -> None:
         self._kandler.clear()
         es = self._build()
-        assert iselist(es), "method '_build()' should return list[Element]"
 
         _fix_new_loop_cursor()
         match len(es):

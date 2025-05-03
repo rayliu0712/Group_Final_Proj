@@ -1,18 +1,18 @@
 from .core import *
-from .game import GamePageMan
+from .game import GameMan
 
 
 class Home(Page):
 
-    def _build(self):
-        close_btn = SimpleImageButton("close_72dp.png", exit_app)
+    def _build(self) -> list[Element]:
+        close_btn = mkImageButton("close_72dp.png", exit_app)
         Screen.topright(close_btn)
 
-        settings_btn = SimpleImageButton("settings_72dp.png")
+        settings_btn = mkImageButton("settings_72dp.png")
         Screen.topleft(settings_btn)
 
         title = OutlinedText("ERIKA", 72)
-        play_btn = SimpleImageButton("play_72dp.png", GamePageMan())
+        play_btn = mkImageButton("play_72dp.png", GameMan())
         center_group = Group([title, play_btn])
         Screen.center(center_group)
 
@@ -24,11 +24,11 @@ class Home(Page):
 
     def __popup_settings(self, be_locked_elements: list[Element]) -> Popup:
         credits_btn = Button("Credits(F1)")
-        settings_box = SimpleTitleBox("Settings", [credits_btn])
+        settings_box = mkTitleBox("Settings", [credits_btn])
         Screen.center(settings_box)
         settings_popup = Popup.LockAndLaunch(be_locked_elements, settings_box)
 
-        credits_box = SimpleTitleBox("Credits", [Text("Me")])
+        credits_box = mkTitleBox("Credits", [Text("Me")])
         Screen.center(credits_box)
 
         credits_btn.at_unclick = Popup.LockAndLaunch(be_locked_elements, credits_box)

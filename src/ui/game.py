@@ -4,10 +4,11 @@ from ..data.consts import *
 import random
 
 
-class GamePageMan(Page):
+class GameMan(Page):
     def _build(self) -> list[Element]:
         GameChooseDiff()()
         GameChooseCharacter()()
+        CardBag()()
         GameScene()()
         return []
 
@@ -18,10 +19,10 @@ class GameChooseDiff(Page):
             vars.diff_level = level
             quit_current_loop()
 
-        easy_btn = SimpleButton('Easy', lambda: set_diff_and_quit(DiffLevel.EASY))
-        hard_btn = SimpleButton('Hard', lambda: set_diff_and_quit(DiffLevel.HARD))
-        master_btn = SimpleButton('Master', lambda: set_diff_and_quit(DiffLevel.MASTER))
-        box = SimpleTitleBox('Choose Difficulty', [easy_btn, hard_btn, master_btn], 'h')
+        easy_btn = mkButton('Easy', lambda: set_diff_and_quit(DiffLevel.EASY))
+        hard_btn = mkButton('Hard', lambda: set_diff_and_quit(DiffLevel.HARD))
+        master_btn = mkButton('Master', lambda: set_diff_and_quit(DiffLevel.MASTER))
+        box = mkTitleBox('Choose Difficulty', [easy_btn, hard_btn, master_btn], 'h')
         Screen.center(box)
 
         return [box]
@@ -33,9 +34,9 @@ class GameChooseCharacter(Page):
             vars.character = character
             quit_current_loop()
 
-        warrior_btn = SimpleButton('Warrior', lambda: set_player_and_quit(Character.WARRIOR))
-        archer_btn = SimpleButton('Archer', lambda: set_player_and_quit(Character.ARCHER))
-        box = SimpleTitleBox('Choose Player', [warrior_btn, archer_btn], 'h')
+        warrior_btn = mkButton('Warrior', lambda: set_player_and_quit(Character.WARRIOR))
+        archer_btn = mkButton('Archer', lambda: set_player_and_quit(Character.ARCHER))
+        box = mkTitleBox('Choose Player', [warrior_btn, archer_btn], 'h')
         Screen.center(box)
 
         return [box]
@@ -49,12 +50,12 @@ class GameScene(Page):
         Screen.center(status_group)
 
         self.generate_cards(5)
-        card_area = SimpleBox(self.cards, 'h')
+        card_area = mkBox(self.cards, 'h')
         card_area.set_size((Screen.width(), 150))
         card_area.set_bck_color((50, 50, 70))
         Screen.bottomleft(card_area)
 
-        close_btn = SimpleImageButton("close_72dp.png", quit_current_loop)
+        close_btn = mkImageButton("close_72dp.png", quit_current_loop)
         Screen.topright(close_btn)
 
         # define logger
@@ -65,13 +66,13 @@ class GameScene(Page):
 
     # bug
     def generate_cards(self, count: int) -> None:
-        self.cards: list[SimpleButton] = []
+        self.cards: list[Button] = []
         for _ in range(count):
             card_type = random.choice(list(CardType))
             if card_type == CardType.ATTACK:
-                card = SimpleButton("Attack\n(10dmg)", lambda c=card_type: self.use_card(c))
+                card = mkButton("Attack\n(10dmg)", lambda c=card_type: self.use_card(c))
             else:
-                card = SimpleButton("Defense\n(3def)", lambda c=card_type: self.use_card(c))
+                card = mkButton("Defense\n(3def)", lambda c=card_type: self.use_card(c))
             card.set_size((120, 80))
             self.cards.append(card)
 
@@ -123,3 +124,29 @@ class GameScene(Page):
         for card in self.cards:
             ...
             # card.set_locked(True)
+
+
+class CardBag(Page):
+
+    def _build(self) -> list[Element]:
+
+        title = OutlinedText("Card Deck", 24)
+        Screen.topleft(title)
+
+        play_btn = mkImageButton("play_72dp.png", quit_current_loop)
+        Screen.bottomright(play_btn)
+
+        card_elements: list[Text] = []
+        for card in cards:
+            element = Text(f"{card['name']}\n({card['type']})", font_size=18)
+            element.set_size((120, 80))
+            element.set_bck_color(card['color'])
+            card_elements.append(element)
+
+        rows: list[Box] = []
+        for i in range(0, len(card_elements), 5):
+            row = mkBox(card_elements[i:i + 5], "h")
+            rows.append(row)
+        deck = Group(rows)
+
+        return [title, play_btn, deck]
