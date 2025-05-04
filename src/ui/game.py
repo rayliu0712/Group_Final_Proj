@@ -5,24 +5,33 @@ import random
 
 
 class GameMan(Page):
-    def _build(self) -> list[Element]:
-        GameChooseDiff()()
-        GameChooseCharacter()()
-        CardBag()()
+    go_back = True
+
+    def _build(self):
+        while self.go_back:
+            if is_pygame_quit():
+                exit_app()
+            else:
+                GameChooseDiff()()
+                GameChooseCharacter()()
+                CardBag()()
+
         GameScene()()
         return []
 
 
 class GameChooseDiff(Page):
     def _build(self):
+
+        @lazy
         def set_diff_and_quit(level: DiffLevel) -> None:
             vars.diff_level = level
             quit_current_loop()
 
-        easy_btn = mkButton('Easy', lambda: set_diff_and_quit(DiffLevel.EASY))
-        hard_btn = mkButton('Hard', lambda: set_diff_and_quit(DiffLevel.HARD))
-        master_btn = mkButton('Master', lambda: set_diff_and_quit(DiffLevel.MASTER))
-        box = mkTitleBox('Choose Difficulty', [easy_btn, hard_btn, master_btn], 'h')
+        easy_btn = mkButton("Easy", set_diff_and_quit(DiffLevel.EASY))
+        hard_btn = mkButton("Hard", set_diff_and_quit(DiffLevel.HARD))
+        master_btn = mkButton("Master", set_diff_and_quit(DiffLevel.MASTER))
+        box = mkTitleBox("Choose Difficulty", [easy_btn, hard_btn, master_btn], "h")
         Screen.center(box)
 
         return [box]
@@ -30,20 +39,54 @@ class GameChooseDiff(Page):
 
 class GameChooseCharacter(Page):
     def _build(self):
+
+        @lazy
         def set_player_and_quit(character: Character) -> None:
             vars.character = character
             quit_current_loop()
 
-        warrior_btn = mkButton('Warrior', lambda: set_player_and_quit(Character.WARRIOR))
-        archer_btn = mkButton('Archer', lambda: set_player_and_quit(Character.ARCHER))
-        box = mkTitleBox('Choose Player', [warrior_btn, archer_btn], 'h')
+        warrior_btn = mkButton("Warrior", set_player_and_quit(Character.WARRIOR))
+        archer_btn = mkButton("Archer", set_player_and_quit(Character.ARCHER))
+        box = mkTitleBox("Choose Player", [warrior_btn, archer_btn], "h")
         Screen.center(box)
 
         return [box]
 
 
+class CardBag(Page):
+    def _build(self):
+        title = OutlinedText("Card Deck", 24)
+        Screen.topleft(title)
+
+        @lazy
+        def set_flag_and_quit(go_back: bool) -> None:
+            GameMan.go_back = go_back
+            quit_current_loop()
+
+        back_btn = mkImageButton("back_72dp.png", set_flag_and_quit(True))
+        Screen.bottomleft(back_btn)
+
+        play_btn = mkImageButton("play_72dp.png", set_flag_and_quit(False))
+        Screen.bottomright(play_btn)
+
+        card_elements: list[Text] = []
+        for card in cards:
+            element = Text(f"{card['name']}\n({card['type']})", font_size=18)
+            element.set_size((120, 80))
+            element.set_bck_color(card['color'])
+            card_elements.append(element)
+
+        rows: list[Box] = []
+        for i in range(0, len(card_elements), 5):
+            row = mkBox(card_elements[i:i + 5], "h")
+            rows.append(row)
+        deck = Group(rows)
+
+        return [title, back_btn, play_btn, deck]
+
+
 class GameScene(Page):
-    def _build(self) -> list[Element]:
+    def _build(self):
         self.player_text = Text(f"Player's HP: {vars.player_hp}", font_color=GREEN)
         self.enemy_text = Text(f"Enemy HP: {vars.enemy_hp}", font_color=RED)
         status_group = Group([self.player_text, self.enemy_text])
@@ -124,29 +167,3 @@ class GameScene(Page):
         for card in self.cards:
             ...
             # card.set_locked(True)
-
-
-class CardBag(Page):
-
-    def _build(self) -> list[Element]:
-
-        title = OutlinedText("Card Deck", 24)
-        Screen.topleft(title)
-
-        play_btn = mkImageButton("play_72dp.png", quit_current_loop)
-        Screen.bottomright(play_btn)
-
-        card_elements: list[Text] = []
-        for card in cards:
-            element = Text(f"{card['name']}\n({card['type']})", font_size=18)
-            element.set_size((120, 80))
-            element.set_bck_color(card['color'])
-            card_elements.append(element)
-
-        rows: list[Box] = []
-        for i in range(0, len(card_elements), 5):
-            row = mkBox(card_elements[i:i + 5], "h")
-            rows.append(row)
-        deck = Group(rows)
-
-        return [title, play_btn, deck]

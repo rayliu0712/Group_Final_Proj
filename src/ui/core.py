@@ -1,4 +1,4 @@
-from typing import Callable, Any, Optional, Self
+from typing import Callable, Any, Optional, Self, Literal
 from abc import ABC, abstractmethod
 
 import thorpy
@@ -12,7 +12,18 @@ from pygame.constants import *
 import functools
 import operator
 
-type Action = Callable[[], Any]
+
+type Action = Callable[[], None]
+
+
+def lazy(func: Callable) -> Callable:
+    def wrapper(*args: Any, **kwargs: Any) -> Callable:
+        return lambda: func(*args, **kwargs)
+    return wrapper
+
+
+def is_pygame_quit() -> bool:
+    return any(e.type == pygame.QUIT for e in pygame.event.get())
 
 
 BLACK = (0, 0, 0)
@@ -37,14 +48,14 @@ def mkImageButton(filename: str, onclick: Optional[Action] = None) -> ImageButto
     return imgbtn
 
 
-def mkBox(children: list[Element], mode: Optional[str] = "v") -> Box:
+def mkBox(children: list, mode: Literal["v", "h", "grid", None] = "v") -> Box:
     box = Box(children, False)
     if mode:
         box.sort_children(mode)
     return box
 
 
-def mkTitleBox(title: str, children: list[Element], mode: Optional[str] = "v") -> Box:
+def mkTitleBox(title: str, children: list, mode: Literal["v", "h", "grid", None] = "v") -> Box:
     titlebox = TitleBox(title, children, False)
     if mode:
         titlebox.sort_children(mode)
@@ -171,11 +182,17 @@ class Popup:
         return popup_wrapper
 
     @classmethod
-    def LockAndLaunch(cls, be_locked_elements: list[Element], be_launched_element: Element) -> Self:
-        be_locked_elements = be_locked_elements[0] if len(be_locked_elements) == 1 else Group(be_locked_elements, None)
-
+    def LockAndLaunch(cls, be_locked_elements: list, be_launched_element: Element) -> Self:
         popup_wrapper = cls()
-        popup_wrapper.launch = lambda: be_launched_element.launch_and_lock_others(be_locked_elements, popup_wrapper.kandler)
+
+        def launch(le: Element) -> None:
+            be_launched_element.launch_and_lock_others(le, popup_wrapper.kandler)
+
+        if len(be_locked_elements) == 1:
+            popup_wrapper.launch = lambda: launch(be_locked_elements[0])
+        else:
+            popup_wrapper.launch = lambda: launch(Group(be_locked_elements, None))
+
         return popup_wrapper
 
     @classmethod
@@ -194,7 +211,7 @@ class Page(ABC):
 
     def __call__(self) -> None:
         self._kandler.clear()
-        es = self._build()
+        es: list[Element] = self._build()
 
         _fix_new_loop_cursor()
         match len(es):
@@ -206,5 +223,5 @@ class Page(ABC):
                 Group(es, None).get_updater().launch(self._kandler)
 
     @abstractmethod
-    def _build(self) -> list[Element]:
+    def _build(self) -> list:
         pass

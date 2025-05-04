@@ -4,7 +4,7 @@ from .game import GameMan
 
 class Home(Page):
 
-    def _build(self) -> list[Element]:
+    def _build(self):
         close_btn = mkImageButton("close_72dp.png", exit_app)
         Screen.topright(close_btn)
 
@@ -22,7 +22,7 @@ class Home(Page):
 
         return main_elements
 
-    def __popup_settings(self, be_locked_elements: list[Element]) -> Popup:
+    def __popup_settings(self, be_locked_elements: list) -> Popup:
         credits_btn = Button("Credits(F1)")
         settings_box = mkTitleBox("Settings", [credits_btn])
         Screen.center(settings_box)
