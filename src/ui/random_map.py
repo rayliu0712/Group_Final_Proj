@@ -1,6 +1,6 @@
 import random
 
-# ------------------ Ô­ tile map ²¿·Ö -------------------
+# ------------------ åŸ tile map éƒ¨åˆ† -------------------
 
 TILE_SIZE = 20
 MAP_WIDTH = 30
@@ -22,33 +22,37 @@ THEMES = {
 }
 
 map_storage = {
-    theme: [None]*5 for theme in THEMES
+    theme: [None] * 5 for theme in THEMES
 }
 
+
 def generate_random_map():
-    return [[random.choice([0]*8 + [1]*2) for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
+    return [[random.choice([0] * 8 + [1] * 2) for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
+
 
 def get_map(theme, index):
     if map_storage[theme][index] is None:
         map_storage[theme][index] = generate_random_map()
     return map_storage[theme][index]
 
-# ------------------ µØÍ¼Â·¾¶ÏµÍ³£¨Â·ÏßÍ¼£© -------------------
+# ------------------ åœ°å›¾è·¯å¾„ç³»ç»Ÿï¼ˆè·¯çº¿å›¾ï¼‰ -------------------
+
 
 class MapNode:
     def __init__(self, layer, position, node_type):
-        self.layer = layer  # µÚ¼¸²ã
-        self.position = position  # Í¬²ãÖĞµÚ¼¸¸ö
+        self.layer = layer  # ç¬¬å‡ å±‚
+        self.position = position  # åŒå±‚ä¸­ç¬¬å‡ ä¸ª
         self.node_type = node_type  # 'battle', 'elite', 'shop', 'event'
-        self.connected_to = []  # Á¬½Óµ½ÏÂÒ»²ãÄÄĞ©½Úµã
-        self.theme = random.choice(list(THEMES.keys()))  # Ëæ»úµØÍ¼Ö÷Ìâ
-        self.tile_index = random.randint(0, 4)  # Ê¹ÓÃµÄ tile map index
+        self.connected_to = []  # è¿æ¥åˆ°ä¸‹ä¸€å±‚å“ªäº›èŠ‚ç‚¹
+        self.theme = random.choice(list(THEMES.keys()))  # éšæœºåœ°å›¾ä¸»é¢˜
+        self.tile_index = random.randint(0, 4)  # ä½¿ç”¨çš„ tile map index
 
     def connect(self, other_node):
         self.connected_to.append(other_node)
 
     def get_map_data(self):
         return get_map(self.theme, self.tile_index)
+
 
 def generate_path_map(layers=7, min_nodes=2, max_nodes=4):
     node_types = ['battle', 'elite', 'shop', 'event']
@@ -60,14 +64,14 @@ def generate_path_map(layers=7, min_nodes=2, max_nodes=4):
         for i in range(num_nodes):
             node_type = random.choices(
                 node_types,
-                weights=[0.5, 0.2, 0.2, 0.1],  # Éú³É¸ÅÂÊ
+                weights=[0.5, 0.2, 0.2, 0.1],  # ç”Ÿæˆæ¦‚ç‡
                 k=1
             )[0]
             node = MapNode(layer_index, i, node_type)
             layer.append(node)
         map_layers.append(layer)
 
-    # Á¬½ÓÃ¿Ò»²ã½Úµã ¡ú ÏÂÒ»²ãµÄ 1~2 ¸ö½Úµã
+    # è¿æ¥æ¯ä¸€å±‚èŠ‚ç‚¹ â†’ ä¸‹ä¸€å±‚çš„ 1~2 ä¸ªèŠ‚ç‚¹
     for i in range(len(map_layers) - 1):
         for node in map_layers[i]:
             next_layer = map_layers[i + 1]

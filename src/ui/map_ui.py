@@ -1,50 +1,54 @@
 import thorpy
 import pygame
-from random_map import generate_path_map  # ÄãÕûºÏºóµÄµØÍ¼½Å±¾
+from random_map import generate_path_map  # ä½ æ•´åˆåçš„åœ°å›¾è„šæœ¬
 
-# ³õÊ¼»¯ pygame ºÍ thorpy
+# åˆå§‹åŒ– pygame å’Œ thorpy
 pygame.init()
 screen = pygame.display.set_mode((1000, 800))
 thorpy.init()
 
-# Éú³ÉµØÍ¼Â·¾¶½á¹¹
+# ç”Ÿæˆåœ°å›¾è·¯å¾„ç»“æ„
 map_layers = generate_path_map()
 current_layer_index = 0
 current_node = None
-selected_path = []  # Íæ¼ÒÑ¡¹ıµÄ½Úµã
+selected_path = []  # ç©å®¶é€‰è¿‡çš„èŠ‚ç‚¹
 
-# ÓÃÓÚ±£´æËùÓĞ°´Å¥
+# ç”¨äºä¿å­˜æ‰€æœ‰æŒ‰é’®
 all_buttons = []
+
 
 def on_node_click(node):
     global current_layer_index, current_node
 
     if current_layer_index == 0 or (current_node and node in current_node.connected_to):
-        print(f"Onto node£º{node.node_type} | Theme£º{node.theme} | map code£º{node.tile_index}")
+        print(f"Onto nodeï¼š{node.node_type} | Themeï¼š{node.theme} | map codeï¼š{node.tile_index}")
         selected_path.append(node)
         current_node = node
         current_layer_index = node.layer + 1
 
-        # Ë¢ĞÂ°´Å¥¸ßÁÁ×´Ì¬
+        # åˆ·æ–°æŒ‰é’®é«˜äº®çŠ¶æ€
         refresh_button_states()
 
-        # TODO: ÕâÀï¿ÉÒÔ¼ÓÈë½øÈëÕ½¶·³¡¾°Âß¼­
+        # TODO: è¿™é‡Œå¯ä»¥åŠ å…¥è¿›å…¥æˆ˜æ–—åœºæ™¯é€»è¾‘
         # map_data = node.get_map_data()
         # launch_battle(map_data)
+
 
 def refresh_button_states():
     for btn, node in all_buttons:
         if node.layer == current_layer_index:
             if current_node is None or node in current_node.connected_to:
-                btn.set_font_color((0, 255, 0))  # ¿Éµã»÷ ¡ú ÂÌÉ«
+                btn.set_font_color((0, 255, 0))  # å¯ç‚¹å‡» â†’ ç»¿è‰²
             else:
-                btn.set_font_color((100, 100, 100))  # ²»¿É´ï ¡ú »ÒÉ«
+                btn.set_font_color((100, 100, 100))  # ä¸å¯è¾¾ â†’ ç°è‰²
         elif node in selected_path:
-            btn.set_font_color((255, 215, 0))  # ÒÑÑ¡ ¡ú ½ğÉ«
+            btn.set_font_color((255, 215, 0))  # å·²é€‰ â†’ é‡‘è‰²
         else:
-            btn.set_font_color((255, 255, 255))  # Ä¬ÈÏ°×É«
+            btn.set_font_color((255, 255, 255))  # é»˜è®¤ç™½è‰²
 
-# äÖÈ¾½Úµã°´Å¥
+# æ¸²æŸ“èŠ‚ç‚¹æŒ‰é’®
+
+
 def render_map_buttons(map_layers):
     y_spacing = 100
     x_spacing = 150
@@ -63,17 +67,18 @@ def render_map_buttons(map_layers):
             all_buttons.append((btn, node))
     return elements
 
-# ´´½¨½çÃæ
+
+# åˆ›å»ºç•Œé¢
 map_buttons = render_map_buttons(map_layers)
 box = thorpy.Box(map_buttons)
 menu = thorpy.Menu(box)
 for element in menu.get_population():
     element.surface = screen
 
-# ³õÊ¼Ë¢ĞÂ°´Å¥ÑÕÉ«
+# åˆå§‹åˆ·æ–°æŒ‰é’®é¢œè‰²
 refresh_button_states()
 
-# Ö÷Ñ­»·
+# ä¸»å¾ªç¯
 clock = pygame.time.Clock()
 running = True
 while running:
