@@ -4,30 +4,33 @@
 
 Page 是封裝 Thorpy 更新邏輯和事件的抽象基類，讓開發者不必手動管理畫面更新和監聽事件
 
-一個 Page 代表一個**介面**。當**呼叫(而非創建)** 一個 Page 實例時，一個新的 loop 開始，畫面開始渲染，其他 loops 則凍結
+一個 Page 代表一個**介面**。當**呼叫(而非創建)** 一個 Page 實例時，一個新的 loop 開始，畫面開始渲染，之前的 loops 則凍結，直到該 loop 結束
 
-## Page 定義
+## Page 定義`
 
 ```py
 class Page(ABC):
     def __init__(self) -> None:
-        '''
+        """
         Page is lazy, call its instance to show
-        '''
+        """
         self._kandler = _KeyEventHandler(False)
 
     def __call__(self) -> None:
         self._kandler.clear()
-        es = self._build()
+        es: list[Element] = self._build()
 
         _fix_new_loop_cursor()
-        if len(es) == 1:
-            es[0].get_updater().launch(self._kandler)
-        else:
-            Group(es, None).get_updater().launch(self._kandler)
+        match len(es):
+            case 0:
+                pass
+            case 1:
+                es[0].get_updater().launch(self._kandler)
+            case _:
+                Group(es, None).get_updater().launch(self._kandler)
 
     @abstractmethod
-    def _build(self) -> list[Element]:
+    def _build(self) -> list:
         pass
 ```
 
@@ -42,7 +45,7 @@ class Page(ABC):
 
     class Example(Page):
 
-        def _build(self) -> list[Element]:
+        def _build(self):
             title = OutlinedText('This is an example page', 72)
             Screen.center(title)
             
@@ -62,7 +65,7 @@ class Page(ABC):
 
     class Home(Page):
 
-        def _build(self) -> list[Element]:
+        def _build(self):
             title = OutlinedText('Home', 72)
             button = SimpleButton('example', Example())  # 當按下按鈕，啟動 Example Page
 
@@ -79,7 +82,7 @@ class Page(ABC):
 
     class Home(Page):
 
-        def _build(self) -> list[Element]:
+        def _build(self):
             Example()()  # 直接啟動 Example Page
             # 下面的程式碼會凍結直到 Example Page 裡的關閉按鈕被按下
             # 結果 : 先顯示 Example Page，等到他關閉，才顯示 Home Page
@@ -101,7 +104,7 @@ class Page(ABC):
 
 - 所有負責介面的類別都必須 **繼承** `Page` 且 **覆寫** `_build()` 方法
 
-- `_build()` 方法必須返回 `list[Element]`
+- `_build()` 方法必須返回裝著元件的 `list`
 
 - `_build()` 方法應該返回除了 popup (下個章節介紹) 之外所有的 elements
 
@@ -115,7 +118,7 @@ class Page(ABC):
 
 在 `Popup` 裡叫做 `kandler`，為 Public 成員變數
 
-`kandler` 為 **Key event hANDLER** 實例的常用縮寫
+`kandler` 為 <u>K</u>ey Event H<u>andler</u> 實例的常用縮寫
 
 ## 綁定定義
 
@@ -156,7 +159,7 @@ from .core import *  # 不用導入 pygame.constants，因為 core.py 已經導�
 
 class Example(Page):
 
-    def _build(self) -> list[Element]:
+    def _build(self):
         close_btn = SimpleImageButton('close_72dp.png', exit_app)
         self._kandler += close_btn, [], [K_q]
         Screen.center(close_btn)
@@ -164,3 +167,6 @@ class Example(Page):
         return [close_btn]
 ```
 
+## 看完了嗎 ?
+
+前往 [Popup 彈窗](popup.md)

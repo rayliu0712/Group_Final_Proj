@@ -167,7 +167,7 @@ def _fix_new_loop_cursor() -> None:
 class Popup:
     def __init__(self):
         """
-        WARNING : don't construt popup_wrapper by construtor. Instead, use class method
+        WARNING : don't construt popup by construtor. Instead, use class method
         Popup is lazy, call its instance to show
         """
         self.kandler = _KeyEventHandler(True)

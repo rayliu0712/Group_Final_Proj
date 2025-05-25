@@ -28,7 +28,7 @@ class Home(Page):
         Screen.center(settings_box)
         settings_popup = Popup.LockAndLaunch(be_locked_elements, settings_box)
 
-        credits_box = mkTitleBox("Credits", [Text("Ray Liu & molang & 4 others")])
+        credits_box = mkTitleBox("Credits", [Text("Ray Liu : 80%"), Text("molang (powered by ai) : 20%"), Text("4 others : 0%")])
         Screen.center(credits_box)
 
         credits_btn.at_unclick = Popup.LockAndLaunch(be_locked_elements, credits_box)
