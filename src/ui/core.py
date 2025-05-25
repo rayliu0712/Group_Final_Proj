@@ -2,7 +2,7 @@ from typing import Callable, Any, Optional, Self, Literal
 from abc import ABC, abstractmethod
 
 import thorpy
-from thorpy.loops import quit_current_loop, exit_app
+from thorpy.loops import exit_app
 from thorpy.elements import *
 
 import pygame
@@ -20,6 +20,10 @@ def lazy(func: Callable) -> Callable:
     def wrapper(*args: Any, **kwargs: Any) -> Callable:
         return lambda: func(*args, **kwargs)
     return wrapper
+
+
+def quit_current_loop() -> None:
+    thorpy.quit_current_loop()
 
 
 def is_pygame_quit() -> bool:
@@ -163,7 +167,7 @@ def _fix_new_loop_cursor() -> None:
 class Popup:
     def __init__(self):
         """
-        WARNING : don"t construt popup_wrapper by construtor. Instead, use class method
+        WARNING : don't construt popup_wrapper by construtor. Instead, use class method
         Popup is lazy, call its instance to show
         """
         self.kandler = _KeyEventHandler(True)
