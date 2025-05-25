@@ -6,7 +6,7 @@ Page 是封裝 Thorpy 更新邏輯和事件的抽象基類，讓開發者不必�
 
 一個 Page 代表一個**介面**。當**呼叫(而非創建)** 一個 Page 實例時，一個新的 loop 開始，畫面開始渲染，之前的 loops 則凍結，直到該 loop 結束
 
-## Page 定義`
+## Page 定義
 
 ```py
 class Page(ABC):
