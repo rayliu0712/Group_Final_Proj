@@ -4,7 +4,6 @@ from ..data import vars
 from ..data.consts import *
 import random
 
-pending_next_nodes = []
 
 class GameMan(Page):
     go_back = True
@@ -89,10 +88,6 @@ class CardBag(Page):
 
 
 class GameScene(Page):
-    def __init__(self, on_battle_end=None):
-        super().__init__()
-        self.on_battle_end = on_battle_end
-        
     def _build(self):
         self.player_text = Text(f"Player's HP: {vars.player_hp}", font_color=GREEN)
         self.enemy_text = Text(f"Enemy HP: {vars.enemy_hp}", font_color=RED)
@@ -169,8 +164,6 @@ class GameScene(Page):
         elif vars.enemy_hp <= 0:
             self.log("You Win!")
             quit_current_loop()
-            if self.on_battle_end:
-                self.on_battle_end()
 
 
 #####
@@ -184,6 +177,7 @@ selected_path = []  # 玩家选过的节点
 # 用于保存所有按钮
 all_buttons = []
 
+
 def on_node_click(node):
     global current_layer_index, current_node
 
@@ -196,54 +190,9 @@ def on_node_click(node):
         # 刷新按钮高亮状态
         refresh_button_states()
 
-        if node.node_type in ("elite", "battle"):
-            # 进入战斗，胜利后弹二选一
-            def after_battle():
-                show_next_map_choice()
-            GameScene(on_battle_end=after_battle)()
-        else:
-            show_next_map_choice()
-
-def show_next_map_choice():
-    """
-    战斗胜利后，弹出二选一地图选择，选完后立刻进入下一场战斗
-    """
-    global current_layer_index, map_layers, pending_next_nodes
-    if current_layer_index >= len(map_layers):
-        Popup.Alone(mkTitleBox("胜利", [Text("你已通关！")]))()
-        return
-
-    next_layer_nodes = map_layers[current_layer_index]
-    if not next_layer_nodes:
-        Popup.Alone(mkTitleBox("胜利", [Text("你已通关！")]))()
-        return
-
-    pending_next_nodes = random.sample(next_layer_nodes, k=min(2, len(next_layer_nodes)))
-    buttons = []
-    for node in pending_next_nodes:
-        btn = mkButton(
-            f"{node.node_type} ({node.theme})",
-            lambda n=node: select_next_and_enter_battle(n)
-        )
-        buttons.append(btn)
-    box = mkTitleBox("请选择下一个地图", buttons, "h")
-    Screen.center(box)
-    Popup.Alone(box)()
-
-def select_next_and_enter_battle(node):
-    """
-    玩家选择了下一个节点，自动进入下一场战斗
-    """
-    global current_layer_index, current_node, selected_path
-    selected_path.append(node)
-    current_node = node
-    current_layer_index = node.layer + 1
-    refresh_button_states()
-
-    # 进入战斗，然后继续地图选择
-    def after_battle():
-        show_next_map_choice()
-    GameScene(on_battle_end=after_battle)()
+        # TODO: 这里可以加入进入战斗场景逻辑
+        # map_data = node.get_map_data()
+        # launch_battle(map_data)
 
 
 def refresh_button_states():
@@ -259,6 +208,8 @@ def refresh_button_states():
             btn.set_font_color((255, 255, 255))  # 默认白色
 
 # 渲染节点按钮
+
+
 def render_map_buttons(map_layers):
     y_spacing = 100
     x_spacing = 150
@@ -278,7 +229,8 @@ def render_map_buttons(map_layers):
             elements.append(btn)
             all_buttons.append((btn, node))
     return elements
-    
+
+
 # # 创建界面
 # map_buttons = render_map_buttons(map_layers)
 # box = thorpy.Box(map_buttons)
@@ -286,9 +238,9 @@ def render_map_buttons(map_layers):
 # for element in menu.get_population():
 #     element.surface = screen
 
-
 # 初始刷新按钮颜色
 refresh_button_states()
+
 
 class MapUI(Page):
     def _build(self):
