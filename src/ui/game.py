@@ -201,6 +201,10 @@ def on_node_click(node):
         # launch_battle(map_data)
         # 判断类型，进入战斗或下一步
         if node.node_type in ("battle", "elite"):
+            # 进入战斗前重置血量
+            vars.player_hp = 100  # 或者根据难度/关卡调整  完善了所有游戏逻辑了才更改可玩性这部分
+            vars.player_defense = 0
+            vars.enemy_hp = 50 if node.node_type == "battle" else 100
             def after_battle():
                 MapUI()()  # 战斗后回到地图页面
             GameScene(on_battle_end=after_battle)()
