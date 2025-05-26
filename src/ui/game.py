@@ -95,24 +95,28 @@ class GameScene(Page):
     def _build(self):
         self.player_text = Text(f"Player's HP: {vars.player_hp}", font_color=GREEN)
         self.enemy_text = Text(f"Enemy HP: {vars.enemy_hp}", font_color=RED)
-        status_group = Group([self.player_text, self.enemy_text])
-        Screen.center(status_group)
+        status_group = mkBox([self.player_text, self.enemy_text], 'h')
 
         self.generate_cards(5)
         card_area = mkBox(self.cards, 'h')
         card_area.set_size((Screen.width(), 150))
         card_area.set_bck_color((50, 50, 70))
-        Screen.bottomleft(card_area)
 
-        close_btn = mkImageButton("close_72dp.png", quit_current_loop)
-        Screen.topright(close_btn)
-
-        # define logger
         self.logger = Text("", 20, BLACK)
         self.log("Select One")
-        Screen.topleft(self.logger)
 
-        return []
+        close_btn = mkImageButton("close_72dp.png", quit_current_loop)
+
+        # 用垂直布局包裹所有内容
+        main_box = mkBox([
+            status_group,
+            self.logger,
+            card_area,
+            close_btn
+        ], 'v')
+        main_box.set_center(Screen.center_pos())  # 居中整个box
+
+        return [main_box]
 
     # bug
     def generate_cards(self, count: int) -> None:
