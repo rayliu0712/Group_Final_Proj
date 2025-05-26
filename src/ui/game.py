@@ -110,8 +110,9 @@ class GameScene(Page):
         # define logger
         self.logger = Text("", 20, BLACK)
         self.log("Select One")
+        Screen.topleft(self.logger)
 
-        return [status_group, card_area, close_btn, self.logger]
+        return []
 
     # bug
     def generate_cards(self, count: int) -> None:
