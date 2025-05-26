@@ -230,7 +230,7 @@ def refresh_button_states():
 
 def render_map_buttons(map_layers):
     global all_buttons
-    all_buttons = []  # 每次都彻底清空
+    all_buttons = []  # 每次都清空
     y_spacing = 100
     x_spacing = 150
     elements = []
@@ -240,7 +240,6 @@ def render_map_buttons(map_layers):
         offset_x = (Screen.width() - total_width) // 2
 
         for node_index, node in enumerate(layer):
-            # 必须用默认参数绑定当前node，防止闭包问题
             def make_handler(n):
                 return lambda: on_node_click(n)
             btn = mkButton(
@@ -251,7 +250,6 @@ def render_map_buttons(map_layers):
             elements.append(btn)
             all_buttons.append((btn, node))
     return elements
-
 
 # # 创建界面
 # map_buttons = render_map_buttons(map_layers)
@@ -266,5 +264,4 @@ refresh_button_states()
 
 class MapUI(Page):
     def _build(self):
-        map_buttons = render_map_buttons(map_layers)
-        return map_buttons
+        return render_map_buttons(map_layers)
