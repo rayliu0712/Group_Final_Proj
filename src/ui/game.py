@@ -88,6 +88,10 @@ class CardBag(Page):
 
 
 class GameScene(Page):
+    def __init__(self, on_battle_end=None):
+    super().__init__()
+    self.on_battle_end = on_battle_end
+
     def _build(self):
         self.player_text = Text(f"Player's HP: {vars.player_hp}", font_color=GREEN)
         self.enemy_text = Text(f"Enemy HP: {vars.enemy_hp}", font_color=RED)
@@ -164,6 +168,8 @@ class GameScene(Page):
         elif vars.enemy_hp <= 0:
             self.log("You Win!")
             quit_current_loop()
+            if self.on_battle_end:
+                self.on_battle_end()
 
 
 #####
@@ -193,6 +199,14 @@ def on_node_click(node):
         # TODO: 这里可以加入进入战斗场景逻辑
         # map_data = node.get_map_data()
         # launch_battle(map_data)
+        # 判断类型，进入战斗或下一步
+        if node.node_type in ("battle", "elite"):
+            def after_battle():
+                MapUI()()  # 战斗后回到地图页面
+            GameScene(on_battle_end=after_battle)()
+        else:
+            # shop/event类型直接回到地图页面
+            MapUI()()
 
 
 def refresh_button_states():
