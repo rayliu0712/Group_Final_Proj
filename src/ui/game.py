@@ -184,12 +184,6 @@ selected_path = []  # 玩家选过的节点
 all_buttons = []
 
 
-def show_battle_choice(on_choice):
-    btn_battle = mkButton("普通战斗", lambda: on_choice("battle"))
-    btn_elite = mkButton("精英战斗", lambda: on_choice("elite"))
-    box = mkTitleBox("请选择战斗类型", [btn_battle, btn_elite], "h")
-    Popup.Alone(box)()
-
 def on_node_click(node):
     global current_layer_index, current_node
 
@@ -202,20 +196,22 @@ def on_node_click(node):
         # 刷新按钮高亮状态
         refresh_button_states()
 
-        # 如果是战斗节点，弹出二选一
+        # TODO: 这里可以加入进入战斗场景逻辑
+        # map_data = node.get_map_data()
+        # launch_battle(map_data)
+        # 判断类型，进入战斗或下一步
         if node.node_type in ("battle", "elite"):
-            def after_choice(choice_type):
-                # 进入战斗前重置血量
-                vars.player_hp = 100  # 或者根据难度/关卡调整  完善了所有游戏逻辑了才更改可玩性这部分
-                vars.player_defense = 0
-                vars.enemy_hp = 50 if choice_type == "battle" else 100
-                def after_battle():
-                    MapUI()()  # 战斗后回到地图页面
-                GameScene(on_battle_end=after_battle)()
-            show_battle_choice(after_choice)
+            # 进入战斗前重置血量
+            vars.player_hp = 100  # 或者根据难度/关卡调整  完善了所有游戏逻辑了才更改可玩性这部分
+            vars.player_defense = 0
+            vars.enemy_hp = 50 if node.node_type == "battle" else 100
+            def after_battle():
+                MapUI()()  # 战斗后回到地图页面
+            GameScene(on_battle_end=after_battle)()
         else:
             # shop/event类型直接回到地图页面
             MapUI()()
+
 
 def refresh_button_states():
     for btn, node in all_buttons:
