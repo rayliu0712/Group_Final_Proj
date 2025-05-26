@@ -89,8 +89,8 @@ class CardBag(Page):
 
 class GameScene(Page):
     def __init__(self, on_battle_end=None):
-    super().__init__()
-    self.on_battle_end = on_battle_end
+        super().__init__()
+        self.on_battle_end = on_battle_end
 
     def _build(self):
         self.player_text = Text(f"Player's HP: {vars.player_hp}", font_color=GREEN)
