@@ -229,19 +229,20 @@ def refresh_button_states():
 
 
 def render_map_buttons(map_layers):
+    global all_buttons
+    all_buttons = []  # 每次刷新按钮时清空
     y_spacing = 100
     x_spacing = 150
     elements = []
 
     for layer_index, layer in enumerate(map_layers):
-        layer_buttons = []
         total_width = len(layer) * x_spacing
         offset_x = (Screen.width() - total_width) // 2
 
         for node_index, node in enumerate(layer):
             btn = mkButton(
                 node.node_type[0].upper(),
-                lambda n=node: on_node_click(n)  
+                lambda n=node: on_node_click(n)
             )
             btn.set_topleft(offset_x + node_index * x_spacing, 50 + layer_index * y_spacing)
             elements.append(btn)
