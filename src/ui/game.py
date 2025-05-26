@@ -88,10 +88,6 @@ class CardBag(Page):
 
 
 class GameScene(Page):
-    def __init__(self, on_battle_end=None):
-        super().__init__()
-        self.on_battle_end = on_battle_end
-
     def _build(self):
         self.player_text = Text(f"Player's HP: {vars.player_hp}", font_color=GREEN)
         self.enemy_text = Text(f"Enemy HP: {vars.enemy_hp}", font_color=RED)
@@ -104,17 +100,20 @@ class GameScene(Page):
 
         self.logger = Text("", 20, BLACK)
         self.log("Select One")
-
+        
         close_btn = mkImageButton("close_72dp.png", quit_current_loop)
 
-        # 用垂直布局包裹所有内容
         main_box = mkBox([
             status_group,
             self.logger,
             card_area,
             close_btn
         ], 'v')
-        main_box.set_center(Screen.center_pos())  # 居中整个box
+
+        main_box.rect.topleft = (
+            (Screen.width() - main_box.width) // 2,
+            (Screen.height() - main_box.height) // 2
+        )
 
         return [main_box]
 
