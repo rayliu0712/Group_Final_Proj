@@ -17,40 +17,9 @@ class GameMan(Page):
                 GameChooseCharacter()()
                 CardBag()()
 
-        main_game_loop()
+        GameScene()()
+        MapUI()()
         return []
-
-def main_game_loop():
-    global map_layers, current_layer_index, current_node, selected_path
-    
-    map_layers = generate_path_map()
-    current_layer_index = 0
-    current_node = None
-    selected_path = []
-
-    current_page = "map"
-    battle_type = None  
-
-    while True:
-        if current_page == "map":
-            # MapUI返回指令: {"action": "battle", "node": node} 或 {"action": "shop", ...}
-            result = MapUI()()
-            if result and result.get("action") == "battle":
-                battle_type = result["battle_type"]
-                node = result["node"]
-                
-                vars.player_hp = 100
-                vars.player_defense = 0
-                vars.enemy_hp = 50 if battle_type == "battle" else 100
-                current_page = "battle"
-            elif result and result.get("action") == "shop":
-                # shop/event
-                pass  
-            elif result and result.get("action") == "quit":
-                break
-        elif current_page == "battle":
-            GameScene()()
-            current_page = "map"
 
 
 class GameChooseDiff(Page):
@@ -227,16 +196,21 @@ def on_node_click(node):
         # 刷新按钮高亮状态
         refresh_button_states()
 
-        # 返回结果给主循环，而不是直接进入下一个页面
+        # TODO: 这里可以加入进入战斗场景逻辑
+        # map_data = node.get_map_data()
+        # launch_battle(map_data)
+        # 判断类型，进入战斗或下一步
         if node.node_type in ("battle", "elite"):
-            # 返回battle指令和类型
-            quit_current_loop({"action": "battle", "battle_type": node.node_type, "node": node})
-        elif node.node_type == "shop":
-            quit_current_loop({"action": "shop", "node": node})
+            # 进入战斗前重置血量
+            vars.player_hp = 100  # 或者根据难度/关卡调整  完善了所有游戏逻辑了才更改可玩性这部分
+            vars.player_defense = 0
+            vars.enemy_hp = 50 if node.node_type == "battle" else 100
+            def after_battle():
+                MapUI()()  # 战斗后回到地图页面
+            GameScene(on_battle_end=after_battle)()
         else:
-            # 其它情况
-            quit_current_loop({"action": "map", "node": node})
-
+            # shop/event类型直接回到地图页面
+            MapUI()()
 
 
 def refresh_button_states():
@@ -256,7 +230,7 @@ def refresh_button_states():
 
 def render_map_buttons(map_layers):
     global all_buttons
-    all_buttons = []
+    all_buttons.clear()
     y_spacing = 100
     x_spacing = 150
     elements = []
@@ -278,6 +252,7 @@ def render_map_buttons(map_layers):
             all_buttons.append((btn, node))
     return elements
 
+
 # # 创建界面
 # map_buttons = render_map_buttons(map_layers)
 # box = thorpy.Box(map_buttons)
@@ -291,5 +266,6 @@ refresh_button_states()
 
 class MapUI(Page):
     def _build(self):
-        return render_map_buttons(map_layers)
-
+        map_buttons = []
+        map_buttons = render_map_buttons(map_layers)
+        return map_buttons
