@@ -17,8 +17,8 @@ class GameMan(Page):
                 GameChooseCharacter()()
                 CardBag()()
 
-        GameScene()()
-        MapUI()()
+        # 新增：进入二选一流程入口
+        start_next_round()
         return []
 
 
@@ -183,6 +183,50 @@ selected_path = []  # 玩家选过的节点
 # 用于保存所有按钮
 all_buttons = []
 
+# test
+
+def start_next_round():
+    btn_battle = mkButton("战斗", choose_battle_type)
+    btn_shop = mkButton("商店 (TODO)", lambda: None)  # 商店功能未做
+    box = mkTitleBox("请选择下一步", [btn_battle, btn_shop], "h")
+    Popup.Alone(box)()
+
+def choose_battle_type():
+    btn_normal = mkButton("普通战斗", lambda: choose_map_node("battle"))
+    btn_elite = mkButton("精英战斗", lambda: choose_map_node("elite"))
+    box = mkTitleBox("请选择战斗类型", [btn_normal, btn_elite], "h")
+    Popup.Alone(box)()
+
+def choose_map_node(node_type):
+    # 从所有该类型节点中随机选2个（可重复）
+    all_candidates = [n for layer in map_layers for n in layer if n.node_type == node_type]
+    if len(all_candidates) == 0:
+        Popup.Alone(mkTitleBox("无可选地图", [Text("没有剩余的该类型地图了")]))()
+        return
+    # random.choices 支持可重复采样
+    nodes = random.choices(all_candidates, k=2) if len(all_candidates) > 1 else all_candidates
+    btns = []
+    for node in nodes:
+        btns.append(mkButton(
+            f"{node.node_type} ({node.theme})",
+            lambda n=node: enter_battle_node(n)
+        ))
+    box = mkTitleBox("请选择地图", btns, "h")
+    Popup.Alone(box)()
+
+def enter_battle_node(node):
+    global selected_path, current_node
+    selected_path.append(node)
+    current_node = node
+
+    # 进入战斗前初始化血量
+    vars.player_hp = 100
+    vars.player_defense = 0
+    vars.enemy_hp = 50 if node.node_type == "battle" else 100
+
+    def after_battle():
+        start_next_round()
+    GameScene(on_battle_end=after_battle)()
 
 def on_node_click(node):
     global current_layer_index, current_node
@@ -241,7 +285,7 @@ def render_map_buttons(map_layers):
         for node_index, node in enumerate(layer):
             btn = mkButton(
                 node.node_type[0].upper(),
-                lambda n=node: on_node_click(n)  
+                lambda n=node: on_node_click(n)
             )
             btn.set_topleft(offset_x + node_index * x_spacing, 50 + layer_index * y_spacing)
             elements.append(btn)
