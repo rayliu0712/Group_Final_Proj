@@ -17,8 +17,8 @@ class GameMan(Page):
                 GameChooseCharacter()()
                 CardBag()()
 
-        # 新增：进入二选一流程入口
-        start_next_round()
+        GameScene()()
+        MapUI()()
         return []
 
 
@@ -88,34 +88,30 @@ class CardBag(Page):
 
 
 class GameScene(Page):
+    def __init__(self, on_battle_end=None):
+        super().__init__()
+        self.on_battle_end = on_battle_end
+
     def _build(self):
         self.player_text = Text(f"Player's HP: {vars.player_hp}", font_color=GREEN)
         self.enemy_text = Text(f"Enemy HP: {vars.enemy_hp}", font_color=RED)
-        status_group = mkBox([self.player_text, self.enemy_text], 'h')
+        status_group = Group([self.player_text, self.enemy_text])
+        Screen.center(status_group)
 
         self.generate_cards(5)
         card_area = mkBox(self.cards, 'h')
         card_area.set_size((Screen.width(), 150))
         card_area.set_bck_color((50, 50, 70))
+        Screen.bottomleft(card_area)
 
+        close_btn = mkImageButton("close_72dp.png", quit_current_loop)
+        Screen.topright(close_btn)
+
+        # define logger
         self.logger = Text("", 20, BLACK)
         self.log("Select One")
-        
-        close_btn = mkImageButton("close_72dp.png", quit_current_loop)
 
-        main_box = mkBox([
-            status_group,
-            self.logger,
-            card_area,
-            close_btn
-        ], 'v')
-
-        main_box.rect.topleft = (
-            (Screen.width() - main_box.width) // 2,
-            (Screen.height() - main_box.height) // 2
-        )
-
-        return [main_box]
+        return [status_group, card_area, close_btn, self.logger]
 
     # bug
     def generate_cards(self, count: int) -> None:
@@ -187,50 +183,12 @@ selected_path = []  # 玩家选过的节点
 # 用于保存所有按钮
 all_buttons = []
 
-# test
 
-def start_next_round():
-    btn_battle = mkButton("战斗", choose_battle_type)
-    btn_shop = mkButton("商店 (TODO)", lambda: None)  # 商店功能未做
-    box = mkTitleBox("请选择下一步", [btn_battle, btn_shop], "h")
+def show_battle_choice(on_choice):
+    btn_battle = mkButton("普通战斗", lambda: on_choice("battle"))
+    btn_elite = mkButton("精英战斗", lambda: on_choice("elite"))
+    box = mkTitleBox("请选择战斗类型", [btn_battle, btn_elite], "h")
     Popup.Alone(box)()
-
-def choose_battle_type():
-    btn_normal = mkButton("普通战斗", lambda: choose_map_node("battle"))
-    btn_elite = mkButton("精英战斗", lambda: choose_map_node("elite"))
-    box = mkTitleBox("请选择战斗类型", [btn_normal, btn_elite], "h")
-    Popup.Alone(box)()
-
-def choose_map_node(node_type):
-    # 从所有该类型节点中随机选2个（可重复）
-    all_candidates = [n for layer in map_layers for n in layer if n.node_type == node_type]
-    if len(all_candidates) == 0:
-        Popup.Alone(mkTitleBox("无可选地图", [Text("没有剩余的该类型地图了")]))()
-        return
-    # random.choices 支持可重复采样
-    nodes = random.choices(all_candidates, k=2) if len(all_candidates) > 1 else all_candidates
-    btns = []
-    for node in nodes:
-        btns.append(mkButton(
-            f"{node.node_type} ({node.theme})",
-            lambda n=node: enter_battle_node(n)
-        ))
-    box = mkTitleBox("请选择地图", btns, "h")
-    Popup.Alone(box)()
-
-def enter_battle_node(node):
-    global selected_path, current_node
-    selected_path.append(node)
-    current_node = node
-
-    # 进入战斗前初始化血量
-    vars.player_hp = 100
-    vars.player_defense = 0
-    vars.enemy_hp = 50 if node.node_type == "battle" else 100
-
-    def after_battle():
-        start_next_round()
-    GameScene(on_battle_end=after_battle)()
 
 def on_node_click(node):
     global current_layer_index, current_node
@@ -244,22 +202,20 @@ def on_node_click(node):
         # 刷新按钮高亮状态
         refresh_button_states()
 
-        # TODO: 这里可以加入进入战斗场景逻辑
-        # map_data = node.get_map_data()
-        # launch_battle(map_data)
-        # 判断类型，进入战斗或下一步
+        # 如果是战斗节点，弹出二选一
         if node.node_type in ("battle", "elite"):
-            # 进入战斗前重置血量
-            vars.player_hp = 100  # 或者根据难度/关卡调整  完善了所有游戏逻辑了才更改可玩性这部分
-            vars.player_defense = 0
-            vars.enemy_hp = 50 if node.node_type == "battle" else 100
-            def after_battle():
-                MapUI()()  # 战斗后回到地图页面
-            GameScene(on_battle_end=after_battle)()
+            def after_choice(choice_type):
+                # 进入战斗前重置血量
+                vars.player_hp = 100  # 或者根据难度/关卡调整  完善了所有游戏逻辑了才更改可玩性这部分
+                vars.player_defense = 0
+                vars.enemy_hp = 50 if choice_type == "battle" else 100
+                def after_battle():
+                    MapUI()()  # 战斗后回到地图页面
+                GameScene(on_battle_end=after_battle)()
+            show_battle_choice(after_choice)
         else:
             # shop/event类型直接回到地图页面
             MapUI()()
-
 
 def refresh_button_states():
     for btn, node in all_buttons:
@@ -289,7 +245,7 @@ def render_map_buttons(map_layers):
         for node_index, node in enumerate(layer):
             btn = mkButton(
                 node.node_type[0].upper(),
-                lambda n=node: on_node_click(n)
+                lambda n=node: on_node_click(n)  
             )
             btn.set_topleft(offset_x + node_index * x_spacing, 50 + layer_index * y_spacing)
             elements.append(btn)
