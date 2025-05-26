@@ -221,8 +221,10 @@ def render_map_buttons(map_layers):
         offset_x = (Screen.width() - total_width) // 2
 
         for node_index, node in enumerate(layer):
-            label = node.node_type[0].upper()
-            btn = mkButton(label, lambda: on_node_click(node))
+            btn = mkButton(
+                node.node_type[0].upper(),
+                lambda n=node: on_node_click(n)  
+            )
             btn.set_topleft(offset_x + node_index * x_spacing, 50 + layer_index * y_spacing)
             elements.append(btn)
             all_buttons.append((btn, node))
